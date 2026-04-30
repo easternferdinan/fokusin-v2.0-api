@@ -1,0 +1,1 @@
+# ../core/ for storing config, environment variables, settings.
