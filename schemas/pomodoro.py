@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 from datetime import datetime
 from typing import Optional
 
@@ -10,15 +10,13 @@ class PomodoroBase(BaseModel):
     status: str
     session_start: datetime
     session_end: datetime
-    started_at: datetime # CLARIFY: redundant?
-    completed_at: datetime # CLARIFY: redundant?
     elapsed_time: int
-    duration: int # CLARIFY: redundant?
+    duration: int
     break_duration: int
     completed: bool
 
 class PomodoroResponse(PomodoroBase):
-    pomodoroId: str
+    pomodoro_id: UUID4
     created_at: datetime
     updated_at: datetime
 
@@ -26,20 +24,10 @@ class PomodoroResponse(PomodoroBase):
         from_attributes = True
 
 class PomodoroCreateRequest(PomodoroBase):
-    user_id: str
     pass
-    created_at: datetime
 
-# class PomodoroCreateResponse(PomodoroBase):
-#     pomodoro_id: str
-#     title: str
-#     created_at: datetime
-
-#     class Config:
-#         from_attributes = True
-
-class PomodoroUpdateRequest(PomodoroBase):
-    pomodoro_id: str
+class PomodoroUpdateRequest(BaseModel):
+    pomodoro_id: UUID4
     title: Optional[str] = None
     status: Optional[str] = None
     session_start: Optional[datetime] = None
@@ -51,33 +39,15 @@ class PomodoroUpdateRequest(PomodoroBase):
     break_duration: Optional[int] = None
     completed: Optional[bool] = None
 
-# class PomodoroUpdateResponse(PomodoroBase):
-#     pomodoro_id: str
-#     title: str
-#     updated_at: datetime
+class PomodoroStartRequest(BaseModel):
+    pomodoro_id: UUID4
 
-#     class Config:
-#         from_attributes = True
+class PomodoroStopRequest(BaseModel):
+    pomodoro_id: UUID4
 
-class PomodoroCompletionRequest(PomodoroBase):
-    pomodoroId: str
+class PomodoroCompletionRequest(BaseModel):
+    pomodoro_id: UUID4
     completed: bool
 
-# class PomodoroCompletionResponse(PomodoroBase):
-#     pomodoro_id: str
-#     title: str
-#     completed: bool
-#     completed_at: Optional[datetime] = None
-
-#     class Config:
-#         from_attributes = True
-
-class PomodoroDeleteRequest(PomodoroBase):
-    pomodoroId: str
-
-# class PomodoroDeleteResponse(PomodoroBase):
-#     pomodoro_id: str
-#     title: str
-
-#     class Config:
-#         from_attributes = True
+class PomodoroDeleteRequest(BaseModel):
+    pomodoro_id: UUID4

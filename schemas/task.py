@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, UUID4
 from datetime import datetime
 from typing import Optional
 from enums.task_enums import TaskCategory, TaskPriority
@@ -13,7 +13,7 @@ class TaskBase(BaseModel):
     reminder_offset: int = Field(ge=0)
 
 class TaskResponse(TaskBase):
-    task_id: str
+    task_id: UUID4
     completed: bool
     completed_at: Optional[datetime] = None
     created_at: datetime

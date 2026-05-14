@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, UUID4
 from datetime import datetime
 
 # CLARIFY: Are notifications sent by system or by request of the admin?
@@ -7,8 +7,15 @@ class NotificationBase(BaseModel):
     is_read: bool
 
 class NotificationResponse(NotificationBase):
-    notification_id: str
+    notification_id: UUID4
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+class NotificationCreateRequest(NotificationBase):
+    pass
+
+class NotificationUpdateRequest(BaseModel):
+    message: str | None = None
+    is_read: bool | None = None
