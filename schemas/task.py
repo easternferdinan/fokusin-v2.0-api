@@ -1,18 +1,7 @@
 from pydantic import BaseModel, Field
 from datetime import datetime
 from typing import Optional
-from enum import Enum
-
-# TODO: should we make enums modular?
-class TaskCategory(str, Enum):
-    STUDY = 'study'
-    PROJECT = 'project'
-    ASSIGNMENT = 'assignment'
-
-class TaskPriority(str, Enum):
-    LOW = 'low'
-    MEDIUM = 'medium'
-    HIGH = 'high'
+from enums.task_enums import TaskCategory, TaskPriority
 
 class TaskBase(BaseModel):
     title: str
