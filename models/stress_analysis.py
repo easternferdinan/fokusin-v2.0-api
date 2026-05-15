@@ -1,14 +1,14 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, DateTime, Boolean, ForeignKey, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
 from db.session import Base
 import uuid
 
 class StressAnalysis(Base):
     __tablename__ = "stress_analysis"
 
-    analysis_id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String, ForeignKey("members.user_id"), nullable=False)
+    analysis_id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("members.user_id"), nullable=False)
     
     self_esteem = Column(Integer, nullable=False)
     mental_health_history = Column(Boolean, nullable=False)
@@ -20,7 +20,7 @@ class StressAnalysis(Base):
     social_support = Column(Integer, nullable=False)
     stress_level = Column(Integer, nullable=False)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
     # Relationships
     member = relationship("Member", back_populates="stress_analyses")

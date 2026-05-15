@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, Enum as SQLEnum, ForeignKey
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, Enum as SQLEnum, ForeignKey, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
 from db.session import Base
 from enums.task_enums import TaskCategory, TaskPriority
 import uuid
@@ -8,8 +8,8 @@ import uuid
 class Task(Base):
     __tablename__ = "tasks"
 
-    task_id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String, ForeignKey("members.user_id"), nullable=False)
+    task_id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("members.user_id"), nullable=False)
 
     title = Column(String, nullable=False)
     description = Column(String, nullable=True)
@@ -22,8 +22,8 @@ class Task(Base):
     completed = Column(Boolean, default=False)
     completed_at = Column(DateTime, nullable=True)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships
     member = relationship("Member", back_populates="tasks")

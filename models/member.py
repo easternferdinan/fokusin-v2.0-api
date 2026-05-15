@@ -1,6 +1,6 @@
-from sqlalchemy import Column, String, DateTime, Enum as SQLEnum
+from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, UTC
 from db.session import Base
 from enums.member_enums import MemberRole
 import uuid
@@ -8,7 +8,7 @@ import uuid
 class Member(Base):
     __tablename__ = "members"
 
-    user_id = Column(String, primary_key=True, index=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
 
     fullname = Column(String, nullable=False)
     username = Column(String, unique=True, index=True, nullable=False)
@@ -16,8 +16,8 @@ class Member(Base):
     password = Column(String, nullable=False) # Hash
     role = Column(SQLEnum(MemberRole), nullable=False, default=MemberRole.USER)
     
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))
 
     # Relationships
     pomodoro_sessions = relationship("PomodoroSession", back_populates="member", cascade="all, delete-orphan")
