@@ -35,16 +35,10 @@ def login(auth_in: UserAuthenticationRequest, db: Session = Depends(get_db)):
     """
     user = authenticate_user_service(db, auth_in)
     
-    if not user:
-        return UserAuthenticationResponse(
-            authenticated=False,
-            error=["Invalid username or password"]
+    if not user.authenticated:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid username or password"
         )
     
-    # TODO: Generate real JWT token
-    mock_token = f"mock-jwt-token-for-{user.username}"
-    
-    return UserAuthenticationResponse(
-        authenticated=True,
-        access_token=mock_token
-    )
+    return user

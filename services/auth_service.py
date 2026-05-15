@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from typing import Tuple, List
+from pwdlib import PasswordHash
 
 from core.exceptions import DatabaseOperationError
 from models.member import Member
 from schemas.member import UserCreateRequest, UserAuthenticationRequest, UserAuthenticationResponse
 from enums.member_enums import MemberRole
+from utils.jwt import create_access_token
 
 def register_user_service(db: Session, user_in: UserCreateRequest) -> Member:
     """
@@ -20,12 +21,15 @@ def register_user_service(db: Session, user_in: UserCreateRequest) -> Member:
         if existing_user:
             return existing_user
 
+        hasher = PasswordHash.recommended()
+        hashed_password = hasher.hash(user_in.password)
+
         # Create new member
         db_user = Member(
             fullname=user_in.fullname,
             username=user_in.username,
             email=user_in.email,
-            password=user_in.password, # TODO: Hash this!
+            password=hashed_password,
             role=MemberRole.USER
         )
         
@@ -37,18 +41,25 @@ def register_user_service(db: Session, user_in: UserCreateRequest) -> Member:
         db.rollback()
         raise DatabaseOperationError("Failed to register user") from e
 
-def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -> Member | None:
+def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -> UserAuthenticationResponse | None:
     """
     Authenticate a user.
     """
     try:
         user = db.query(Member).filter(Member.username == auth_in.username).first()
         
-        # In a real app, verify hashed password
-        if not user or user.password != auth_in.password:
-            return None
+        hasher = PasswordHash.recommended()
+        if not user or not hasher.verify(auth_in.password, user.password):
+            return UserAuthenticationResponse(
+                authenticated=False,
+                error=["Invalid username or password"]
+            )
         
-        return user
+        access_token = create_access_token(user)
+        return UserAuthenticationResponse(
+            authenticated=True,
+            access_token=access_token
+        )
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to authenticate user") from e
 
