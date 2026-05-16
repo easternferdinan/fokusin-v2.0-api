@@ -1,11 +1,11 @@
 import enum
 
 class TaskCategory(str, enum.Enum):
-    STUDY = 'study'
-    PROJECT = 'project'
-    ASSIGNMENT = 'assignment'
+    KULIAH = 'kuliah'
+    PROYEK = 'proyek'
+    LAINNYA = 'lainnya'
 
 class TaskPriority(str, enum.Enum):
-    LOW = 'low'
-    MEDIUM = 'medium'
-    HIGH = 'high'
+    RENDAH = 'rendah'
+    SEDANG = 'sedang'
+    TINGGI = 'tinggi'
