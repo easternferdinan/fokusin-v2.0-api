@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, UUID
+from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, UUID, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from db.session import Base
@@ -12,7 +12,7 @@ class PomodoroSession(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("members.user_id"), nullable=False)
     
     title = Column(String, nullable=False)
-    status = Column(PomodoroStatus, nullable=False)
+    status = Column(SQLEnum(PomodoroStatus), nullable=False)
     
     session_start = Column(DateTime, nullable=False)
     session_end = Column(DateTime, nullable=False)
