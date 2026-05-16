@@ -7,30 +7,33 @@ from core.exceptions import DatabaseOperationError
 from models.pomodoro_session import PomodoroSession
 from schemas.pomodoro import PomodoroCreateRequest, PomodoroUpdateRequest
 
-def get_pomodoros_service(db: Session) -> List[PomodoroSession]:
+def get_pomodoros_service(db: Session, user_id: uuid.UUID) -> List[PomodoroSession]:
     """
-    Retrieve all pomodoro sessions.
+    Retrieve all pomodoro sessions for a specific user.
     """
     try:
-        return db.query(PomodoroSession).all()
+        return db.query(PomodoroSession).filter(PomodoroSession.user_id == user_id).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve pomodoro sessions") from e
 
-def get_pomodoro_service(db: Session, pomodoro_id: str) -> PomodoroSession | None:
+def get_pomodoro_service(db: Session, pomodoro_id: str, user_id: uuid.UUID) -> PomodoroSession | None:
     """
-    Retrieve a specific pomodoro session by ID.
+    Retrieve a specific pomodoro session by ID for a specific user.
     """
     try:
-        return db.query(PomodoroSession).filter(PomodoroSession.pomodoro_id == uuid.UUID(pomodoro_id)).first()
+        return db.query(PomodoroSession).filter(
+            PomodoroSession.pomodoro_id == uuid.UUID(pomodoro_id),
+            PomodoroSession.user_id == user_id
+        ).first()
     except SQLAlchemyError as e:
         raise DatabaseOperationError(f"Failed to retrieve pomodoro session {pomodoro_id}") from e
 
-def create_pomodoro_service(db: Session, pomodoro_in: PomodoroCreateRequest) -> PomodoroSession:
+def create_pomodoro_service(db: Session, pomodoro_in: PomodoroCreateRequest, user_id: uuid.UUID) -> PomodoroSession:
     """
-    Log a new pomodoro session.
+    Log a new pomodoro session for a specific user.
     """
     try:
-        db_pomodoro = PomodoroSession(**pomodoro_in.dict())
+        db_pomodoro = PomodoroSession(**pomodoro_in.dict(), user_id=user_id)
         db.add(db_pomodoro)
         db.commit()
         db.refresh(db_pomodoro)
@@ -39,12 +42,15 @@ def create_pomodoro_service(db: Session, pomodoro_in: PomodoroCreateRequest) -> 
         db.rollback()
         raise DatabaseOperationError("Failed to create pomodoro session") from e
 
-def update_pomodoro_service(db: Session, pomodoro_id: str, pomodoro_in: PomodoroUpdateRequest) -> PomodoroSession | None:
+def update_pomodoro_service(db: Session, pomodoro_id: str, pomodoro_in: PomodoroUpdateRequest, user_id: uuid.UUID) -> PomodoroSession | None:
     """
-    Update an existing pomodoro session.
+    Update an existing pomodoro session for a specific user.
     """
     try:
-        db_pomodoro = db.query(PomodoroSession).filter(PomodoroSession.pomodoro_id == uuid.UUID(pomodoro_id)).first()
+        db_pomodoro = db.query(PomodoroSession).filter(
+            PomodoroSession.pomodoro_id == uuid.UUID(pomodoro_id),
+            PomodoroSession.user_id == user_id
+        ).first()
         if not db_pomodoro:
             return None
         
@@ -60,12 +66,15 @@ def update_pomodoro_service(db: Session, pomodoro_id: str, pomodoro_in: Pomodoro
         db.rollback()
         raise DatabaseOperationError(f"Failed to update pomodoro session {pomodoro_id}") from e
 
-def delete_pomodoro_service(db: Session, pomodoro_id: str) -> bool:
+def delete_pomodoro_service(db: Session, pomodoro_id: str, user_id: uuid.UUID) -> bool:
     """
-    Delete a pomodoro session.
+    Delete a pomodoro session for a specific user.
     """
     try:
-        db_pomodoro = db.query(PomodoroSession).filter(PomodoroSession.pomodoro_id == uuid.UUID(pomodoro_id)).first()
+        db_pomodoro = db.query(PomodoroSession).filter(
+            PomodoroSession.pomodoro_id == uuid.UUID(pomodoro_id),
+            PomodoroSession.user_id == user_id
+        ).first()
         if not db_pomodoro:
             return False
         

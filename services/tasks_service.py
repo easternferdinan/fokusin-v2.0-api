@@ -8,30 +8,33 @@ from core.exceptions import DatabaseOperationError
 from models.task import Task
 from schemas.task import TaskCreateRequest, TaskUpdateRequest, TaskCompletionRequest
 
-def get_tasks_service(db: Session) -> List[Task]:
+def get_tasks_service(db: Session, user_id: uuid.UUID) -> List[Task]:
     """
-    Retrieve all tasks.
+    Retrieve all tasks for a specific user.
     """
     try:
-        return db.query(Task).all()
+        return db.query(Task).filter(Task.user_id == user_id).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve tasks") from e
 
-def get_task_service(db: Session, task_id: str) -> Task | None:
+def get_task_service(db: Session, task_id: str, user_id: uuid.UUID) -> Task | None:
     """
-    Retrieve a specific task by ID.
+    Retrieve a specific task by ID for a specific user.
     """
     try:
-        return db.query(Task).filter(Task.task_id == uuid.UUID(task_id)).first()
+        return db.query(Task).filter(
+            Task.task_id == uuid.UUID(task_id),
+            Task.user_id == user_id
+        ).first()
     except SQLAlchemyError as e:
         raise DatabaseOperationError(f"Failed to retrieve task {task_id}") from e
 
-def create_task_service(db: Session, task: TaskCreateRequest) -> Task:
+def create_task_service(db: Session, task: TaskCreateRequest, user_id: uuid.UUID) -> Task:
     """
-    Create a new task.
+    Create a new task for a specific user.
     """
     try:
-        db_task = Task(**task.dict())
+        db_task = Task(**task.dict(), user_id=user_id)
         db.add(db_task)
         db.commit()
         db.refresh(db_task)
@@ -40,12 +43,15 @@ def create_task_service(db: Session, task: TaskCreateRequest) -> Task:
         db.rollback()
         raise DatabaseOperationError("Failed to create task") from e
 
-def update_task_service(db: Session, task_id: str, task_in: TaskUpdateRequest) -> Task | None:
+def update_task_service(db: Session, task_id: str, task_in: TaskUpdateRequest, user_id: uuid.UUID) -> Task | None:
     """
-    Update an existing task.
+    Update an existing task for a specific user.
     """
     try:
-        db_task = db.query(Task).filter(Task.task_id == uuid.UUID(task_id)).first()
+        db_task = db.query(Task).filter(
+            Task.task_id == uuid.UUID(task_id),
+            Task.user_id == user_id
+        ).first()
         if not db_task:
             return None
         
@@ -61,12 +67,15 @@ def update_task_service(db: Session, task_id: str, task_in: TaskUpdateRequest) -
         db.rollback()
         raise DatabaseOperationError(f"Failed to update task {task_id}") from e
 
-def delete_task_service(db: Session, task_id: str) -> bool:
+def delete_task_service(db: Session, task_id: str, user_id: uuid.UUID) -> bool:
     """
-    Delete a task.
+    Delete a task for a specific user.
     """
     try:
-        db_task = db.query(Task).filter(Task.task_id == uuid.UUID(task_id)).first()
+        db_task = db.query(Task).filter(
+            Task.task_id == uuid.UUID(task_id),
+            Task.user_id == user_id
+        ).first()
         if not db_task:
             return False
         
@@ -77,12 +86,15 @@ def delete_task_service(db: Session, task_id: str) -> bool:
         db.rollback()
         raise DatabaseOperationError(f"Failed to delete task {task_id}") from e
 
-def complete_task_service(db: Session, task_id: str, completion_in: TaskCompletionRequest) -> Task | None:
+def complete_task_service(db: Session, task_id: str, completion_in: TaskCompletionRequest, user_id: uuid.UUID) -> Task | None:
     """
-    Mark a task as complete or incomplete.
+    Mark a task as complete or incomplete for a specific user.
     """
     try:
-        db_task = db.query(Task).filter(Task.task_id == uuid.UUID(task_id)).first()
+        db_task = db.query(Task).filter(
+            Task.task_id == uuid.UUID(task_id),
+            Task.user_id == user_id
+        ).first()
         if not db_task:
             return None
         

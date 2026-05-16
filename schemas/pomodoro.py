@@ -1,13 +1,11 @@
+from enums.pomodoro_enums import PomodoroStatus
 from pydantic import BaseModel, UUID4
 from datetime import datetime
 from typing import Optional
 
-# TODO: Break down into more granular schemas per endpoint. 
-# e.g. PomodoroStartRequest, PomodoroStopRequest, PomodoroCompleteRequest etc.
-
 class PomodoroBase(BaseModel):
     title: str
-    status: str
+    status: PomodoroStatus
     session_start: datetime
     session_end: datetime
     elapsed_time: int
@@ -29,7 +27,7 @@ class PomodoroCreateRequest(PomodoroBase):
 class PomodoroUpdateRequest(BaseModel):
     pomodoro_id: UUID4
     title: Optional[str] = None
-    status: Optional[str] = None
+    status: Optional[PomodoroStatus] = None
     session_start: Optional[datetime] = None
     session_end: Optional[datetime] = None
     started_at: Optional[datetime] = None

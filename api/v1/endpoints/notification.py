@@ -2,7 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 
-from api.deps import get_db
+from api.deps import get_db, get_current_user
+from models.member import Member
 from schemas.notification import NotificationCreateRequest, NotificationResponse, NotificationUpdateRequest
 from services.notification_service import (
     get_notifications_service,
@@ -15,45 +16,45 @@ from services.notification_service import (
 router = APIRouter()
 
 @router.get("/", response_model=List[NotificationResponse])
-def get_notifications(db: Session = Depends(get_db)):
+def get_notifications(db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
     """
-    Retrieve all notifications.
+    Retrieve all notifications for the current user.
     """
-    return get_notifications_service(db)
+    return get_notifications_service(db, current_user.user_id)
 
 @router.post("/", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
-def create_notification(notification_in: NotificationCreateRequest, db: Session = Depends(get_db)):
+def create_notification(notification_in: NotificationCreateRequest, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
     """
-    Create a new notification.
+    Create a new notification for the current user.
     """
-    return create_notification_service(db, notification_in)
+    return create_notification_service(db, notification_in, current_user.user_id)
 
 @router.get("/{notification_id}", response_model=NotificationResponse)
-def get_notification(notification_id: str, db: Session = Depends(get_db)):
+def get_notification(notification_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
     """
-    Get a specific notification by ID.
+    Get a specific notification by ID for the current user.
     """
-    notification = get_notification_service(db, notification_id)
+    notification = get_notification_service(db, notification_id, current_user.user_id)
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
     return notification
 
 @router.put("/{notification_id}", response_model=NotificationResponse)
-def update_notification(notification_id: str, notification_in: NotificationUpdateRequest, db: Session = Depends(get_db)):
+def update_notification(notification_id: str, notification_in: NotificationUpdateRequest, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
     """
-    Update an existing notification.
+    Update an existing notification for the current user.
     """
-    notification = update_notification_service(db, notification_id, notification_in)
+    notification = update_notification_service(db, notification_id, notification_in, current_user.user_id)
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
     return notification
 
 @router.delete("/{notification_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_notification(notification_id: str, db: Session = Depends(get_db)):
+def delete_notification(notification_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
     """
-    Delete a notification.
+    Delete a notification for the current user.
     """
-    success = delete_notification_service(db, notification_id)
+    success = delete_notification_service(db, notification_id, current_user.user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Notification not found")
     return None

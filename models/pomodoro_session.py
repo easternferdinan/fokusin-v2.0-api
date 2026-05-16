@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Integer, DateTime, Boolean, ForeignKey, U
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from db.session import Base
+from enums.pomodoro_enums import PomodoroStatus
 import uuid
 
 class PomodoroSession(Base):
@@ -11,7 +12,7 @@ class PomodoroSession(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("members.user_id"), nullable=False)
     
     title = Column(String, nullable=False)
-    status = Column(String, nullable=False) # CLARIFY: what are the statuses? e.g. started, completed, interrupted
+    status = Column(PomodoroStatus, nullable=False)
     
     session_start = Column(DateTime, nullable=False)
     session_end = Column(DateTime, nullable=False)

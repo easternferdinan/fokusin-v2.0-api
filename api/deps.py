@@ -30,13 +30,13 @@ def get_token_payload(token: str = Depends(oauth2_scheme)) -> dict[Any, Any]:
     except ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
+            detail="Token kadaluwarsa",
             headers={"WWW-Authenticate": "Bearer"},
         )
     except PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
+            detail="Token tidak valid",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
@@ -48,10 +48,17 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         payload = decode_access_token(token)
         user_id: str = payload.get("user_id")
 
+        if token is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Harap login terlebih dahulu",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
         if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication credentials",
+                detail="Token tidak valid",
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
@@ -59,19 +66,19 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         if user is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found",
+                detail="User tidak ditemukan",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         return user
     except ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
+            detail="Token kadaluwarsa",
             headers={"WWW-Authenticate": "Bearer"},
         )
     except PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid authentication credentials",
+            detail="Token tidak valid",
             headers={"WWW-Authenticate": "Bearer"},
         )

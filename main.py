@@ -1,7 +1,9 @@
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+
 from api.v1.router import api_router
-from core.exceptions import DatabaseOperationError
+from core.exceptions import DatabaseOperationError, UserUnauthorizedError
+from utils.logger import log_database_operation_error, log_unauthorized_user
 
 app = FastAPI(title="Fokusin RESTful API")
 
@@ -16,10 +18,26 @@ async def database_operation_error_handler(request: Request, exc: DatabaseOperat
     """
     Handle DatabaseOperationError exception into HTTP 500 response.
     """
-    print(f"Database Operation Error: {exc.__cause__ or 'Unknown error'}")
+    if exc.__cause__:
+        log_database_operation_error(exc.__cause__)
+    else:
+        log_database_operation_error()
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
-            "detail": str(exc)
+            "detail": "Terjadi kesalahan pada sistem. Silahkan coba lagi nanti."
+        }
+    )
+
+@app.exception_handler(UserUnauthorizedError)
+async def user_unauthorized_error_handler(request: Request, exc: UserUnauthorizedError):
+    """
+    Handle UserUnauthorizedError exception into HTTP 401 response.
+    """
+    log_unauthorized_user(exc.user_id)
+    return JSONResponse(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        content={
+            "detail": "Anda tidak memiliki akses untuk melakukan operasi ini."
         }
     )
