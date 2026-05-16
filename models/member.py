@@ -25,6 +25,7 @@ class Member(Base):
     notifications = relationship("Notification", back_populates="member", cascade="all, delete-orphan")
     reports = relationship("Report", back_populates="member", cascade="all, delete-orphan")
     stress_analyses = relationship("StressAnalysis", back_populates="member", cascade="all, delete-orphan")
+    logs = relationship("Log", back_populates="member", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Member(username='{self.username}', email='{self.email}')>"

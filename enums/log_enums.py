@@ -1,0 +1,32 @@
+from enum import Enum
+
+class LogLevel(str, Enum):
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
+    DEBUG = "DEBUG"
+
+class LogEvent(str, Enum):
+    # Auth events
+    USER_LOGIN = "USER_LOGIN"
+    USER_LOGOUT = "USER_LOGOUT"
+    USER_REGISTER = "USER_REGISTER"
+    
+    # Task events
+    TASK_CREATED = "TASK_CREATED"
+    TASK_UPDATED = "TASK_UPDATED"
+    TASK_DELETED = "TASK_DELETED"
+    TASK_COMPLETED = "TASK_COMPLETED"
+    
+    # Pomodoro events
+    POMODORO_STARTED = "POMODORO_STARTED"
+    POMODORO_COMPLETED = "POMODORO_COMPLETED"
+    POMODORO_CANCELLED = "POMODORO_CANCELLED"
+    
+    # Stress Analysis events
+    STRESS_ANALYSIS_COMPLETED = "STRESS_ANALYSIS_COMPLETED"
+    
+    # System events
+    SYSTEM_ERROR = "SYSTEM_ERROR"
+    DATABASE_ERROR = "DATABASE_ERROR"
