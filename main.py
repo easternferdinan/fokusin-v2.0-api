@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
 
 from api.v1.router import api_router
-from core.exceptions import DatabaseOperationError, UserUnauthorizedError
+from core.exceptions import DatabaseOperationError, UserUnauthorizedError, ResourceCreationError
 from utils.logger import log_database_operation_error, log_unauthorized_user
 
 app = FastAPI(title="Fokusin RESTful API")
@@ -26,6 +26,18 @@ async def database_operation_error_handler(request: Request, exc: DatabaseOperat
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
             "detail": "Terjadi kesalahan pada sistem. Silahkan coba lagi nanti."
+        }
+    )
+
+@app.exception_handler(ResourceCreationError)
+async def resource_creation_error_handler(request: Request, exc: ResourceCreationError):
+    """
+    Handle ResourceCreationError exception into HTTP 400 response.
+    """
+    return JSONResponse(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        content={
+            "detail": exc.message
         }
     )
 

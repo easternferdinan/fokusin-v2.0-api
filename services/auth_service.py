@@ -13,14 +13,6 @@ def register_user_service(db: Session, user_in: UserCreateRequest) -> Member:
     Register a new member.
     """
     try:
-        # Check if user already exists
-        existing_user = db.query(Member).filter(
-            (Member.username == user_in.username) | (Member.email == user_in.email)
-        ).first()
-        
-        if existing_user:
-            return existing_user
-
         hasher = PasswordHash.recommended()
         hashed_password = hasher.hash(user_in.password)
 
@@ -30,6 +22,9 @@ def register_user_service(db: Session, user_in: UserCreateRequest) -> Member:
             username=user_in.username,
             email=user_in.email,
             password=hashed_password,
+            mental_health_history=user_in.mental_health_history,
+            academic_performance=user_in.academic_performance,
+            social_support=user_in.social_support,
             role=MemberRole.USER
         )
         

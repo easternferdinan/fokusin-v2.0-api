@@ -5,6 +5,9 @@ class UserBase(BaseModel):
     fullname: str
     username: str = Field(min_length=3)
     email: EmailStr
+    mental_health_history: bool
+    academic_performance: int
+    social_support: int
 
 class UserResponse(UserBase):
     user_id: UUID4

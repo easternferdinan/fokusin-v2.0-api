@@ -4,6 +4,12 @@ class DatabaseOperationError(Exception):
     """
     pass
 
+class ResourceCreationError(Exception):
+    """
+    Raised when a resource cannot be created.
+    """
+    pass
+
 class UserUnauthorizedError(Exception):
     """
     Raised when an operation is performed by an unauthorized user.

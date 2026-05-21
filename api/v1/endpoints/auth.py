@@ -18,13 +18,13 @@ def register(user_in: UserCreateRequest, db: Session = Depends(get_db)):
     """
     # Check if user already exists
     existing_user = get_user_by_username_or_email_service(db, user_in.username, user_in.email)
-    
+
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username or email already registered"
+            detail="Username atau email sudah terdaftar"
         )
-    
+
     # Create new member
     return register_user_service(db, user_in)
 
