@@ -11,13 +11,10 @@ class StressAnalysis(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("members.user_id"), nullable=False)
     
     self_esteem = Column(Integer, nullable=False)
-    mental_health_history = Column(Boolean, nullable=False)
     depression = Column(Integer, nullable=False)
     headache = Column(Integer, nullable=False)
     sleep_quality = Column(Integer, nullable=False)
-    academic_performance = Column(Integer, nullable=False)
     study_load = Column(Integer, nullable=False)
-    social_support = Column(Integer, nullable=False)
     stress_level = Column(Integer, nullable=False)
     
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))

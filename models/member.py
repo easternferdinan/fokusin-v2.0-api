@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, UUID
+from sqlalchemy import Column, String, DateTime, Enum as SQLEnum, UUID, Boolean, Integer
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from db.session import Base
@@ -15,6 +15,10 @@ class Member(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False) # Hash
     role = Column(SQLEnum(MemberRole), nullable=False, default=MemberRole.USER)
+    
+    mental_health_history = Column(Boolean, nullable=False)
+    academic_performance = Column(Integer, nullable=False)
+    social_support = Column(Integer, nullable=False)
     
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
     updated_at = Column(DateTime, default=lambda: datetime.now(UTC), onupdate=lambda: datetime.now(UTC))

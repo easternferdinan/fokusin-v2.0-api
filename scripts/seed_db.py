@@ -33,7 +33,10 @@ def seed_db():
             username="admin",
             email="admin@example.com",
             password="adminpassword", # In real app, this should be hashed
-            role=MemberRole.ADMIN
+            role=MemberRole.ADMIN,
+            mental_health_history=False,
+            academic_performance=0,
+            social_support=0
         )
         
         user1 = Member(
@@ -41,7 +44,10 @@ def seed_db():
             username="johndoe",
             email="john@example.com",
             password="password123",
-            role=MemberRole.USER
+            role=MemberRole.USER,
+            mental_health_history=False,
+            academic_performance=9,
+            social_support=8
         )
         
         user2 = Member(
@@ -49,7 +55,10 @@ def seed_db():
             username="janesmith",
             email="jane@example.com",
             password="password123",
-            role=MemberRole.USER
+            role=MemberRole.USER,
+            mental_health_history=True,
+            academic_performance=6,
+            social_support=5
         )
         
         db.add_all([admin, user1, user2])
@@ -124,25 +133,19 @@ def seed_db():
             StressAnalysis(
                 user_id=user1.user_id,
                 self_esteem=8,
-                mental_health_history=False,
                 depression=2,
                 headache=1,
                 sleep_quality=7,
-                academic_performance=9,
                 study_load=3,
-                social_support=8,
                 stress_level=2
             ),
             StressAnalysis(
                 user_id=user2.user_id,
                 self_esteem=5,
-                mental_health_history=True,
                 depression=5,
                 headache=4,
                 sleep_quality=4,
-                academic_performance=6,
                 study_load=8,
-                social_support=5,
                 stress_level=7
             )
         ]
