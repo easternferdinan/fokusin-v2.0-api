@@ -7,7 +7,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sqlalchemy.orm import Session
 from db.session import SessionLocal
-from models import Member, Task, PomodoroSession, Notification, Report, StressAnalysis
+from models import Member, Task, PomodoroSession, Notification, Report, StressAnalysis, Log
 
 def cleanup_db():
     print("Starting database cleanup...")
@@ -16,6 +16,8 @@ def cleanup_db():
     try:
         # Delete data from tables in order to respect foreign key constraints
         # Child tables first, parent tables last
+        print("Deleting Logs...")
+        db.query(Log).delete()
         
         print("Deleting Reports...")
         db.query(Report).delete()

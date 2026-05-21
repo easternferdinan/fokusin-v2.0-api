@@ -5,7 +5,8 @@ from models.pomodoro_session import PomodoroSession
 from models.notification import Notification
 from models.report import Report
 from models.stress_analysis import StressAnalysis
+from models.log import Log
 
 # This allows us to import all models from the models package
 # and ensures they are registered with Base.metadata
-__all__ = ["Base", "Member", "Task", "PomodoroSession", "Notification", "Report", "StressAnalysis"]
+__all__ = ["Base", "Member", "Task", "PomodoroSession", "Notification", "Report", "StressAnalysis", "Log"]

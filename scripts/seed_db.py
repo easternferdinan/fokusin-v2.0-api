@@ -8,9 +8,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from sqlalchemy.orm import Session
 from db.session import SessionLocal, engine, Base
-from models import Member, Task, PomodoroSession, Notification, Report, StressAnalysis
+from models import Member, Task, PomodoroSession, Notification, Report, StressAnalysis, Log
 from enums.member_enums import MemberRole
 from enums.task_enums import TaskCategory, TaskPriority
+from enums.log_enums import LogLevel, LogEvent
 
 def seed_db():
     print("Initializing database...")
@@ -72,8 +73,8 @@ def seed_db():
             {
                 "title": "Complete AI Assignment",
                 "description": "Finish the neural network implementation",
-                "category": TaskCategory.ASSIGNMENT,
-                "priority": TaskPriority.HIGH,
+                "category": TaskCategory.KULIAH,
+                "priority": TaskPriority.TINGGI,
                 "target_duration": 120,
                 "deadline": datetime.now(UTC) + timedelta(days=2),
                 "user_id": user1.user_id
@@ -81,8 +82,8 @@ def seed_db():
             {
                 "title": "Project Brainstorming",
                 "description": "Discuss new features for the task tracker",
-                "category": TaskCategory.PROJECT,
-                "priority": TaskPriority.MEDIUM,
+                "category": TaskCategory.PROYEK,
+                "priority": TaskPriority.SEDANG,
                 "target_duration": 60,
                 "deadline": datetime.now(UTC) + timedelta(days=5),
                 "user_id": user1.user_id
@@ -90,8 +91,8 @@ def seed_db():
             {
                 "title": "Study for Midterms",
                 "description": "Read chapters 1 to 5 of the textbook",
-                "category": TaskCategory.STUDY,
-                "priority": TaskPriority.HIGH,
+                "category": TaskCategory.KULIAH,
+                "priority": TaskPriority.TINGGI,
                 "target_duration": 180,
                 "deadline": datetime.now(UTC) + timedelta(days=7),
                 "user_id": user2.user_id
@@ -107,7 +108,7 @@ def seed_db():
             PomodoroSession(
                 user_id=user1.user_id,
                 title="Deep Work: AI",
-                status="completed",
+                status="stopped",
                 session_start=datetime.now(UTC) - timedelta(hours=2),
                 session_end=datetime.now(UTC) - timedelta(hours=1, minutes=35),
                 elapsed_time=1500, # 25 mins
@@ -117,7 +118,7 @@ def seed_db():
             PomodoroSession(
                 user_id=user2.user_id,
                 title="Math Study",
-                status="interrupted",
+                status="paused",
                 session_start=datetime.now(UTC) - timedelta(hours=1),
                 session_end=datetime.now(UTC) - timedelta(minutes=45),
                 elapsed_time=900, # 15 mins
@@ -182,6 +183,33 @@ def seed_db():
             )
         ]
         db.add_all(reports)
+        
+        # 7. Create Logs
+        print("Seeding Logs...")
+        logs = [
+            Log(
+                user_id=user1.user_id,
+                level=LogLevel.INFO,
+                event_type=LogEvent.USER_LOGIN,
+                message="User John Doe logged in.",
+                extra_data={"ip_address": "192.168.1.10", "browser": "Chrome"}
+            ),
+            Log(
+                user_id=user1.user_id,
+                level=LogLevel.INFO,
+                event_type=LogEvent.TASK_CREATED,
+                message="Created task 'Complete AI Assignment'.",
+                extra_data={"task_id": str(db_tasks[0].task_id)}
+            ),
+            Log(
+                user_id=user2.user_id,
+                level=LogLevel.WARNING,
+                event_type=LogEvent.SYSTEM_ERROR,
+                message="Failed to sync Pomodoro session due to network timeout.",
+                extra_data={"error_code": 504}
+            )
+        ]
+        db.add_all(logs)
         
         db.commit()
         print("Database seeded successfully!")
