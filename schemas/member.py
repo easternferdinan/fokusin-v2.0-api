@@ -6,8 +6,8 @@ class UserBase(BaseModel):
     username: str = Field(min_length=3)
     email: EmailStr
     mental_health_history: bool
-    academic_performance: int
-    social_support: int
+    academic_performance: int = Field(ge=0, le=5)
+    social_support: int = Field(ge=0, le=3)
 
 class UserResponse(UserBase):
     user_id: UUID4
@@ -25,12 +25,15 @@ class UserUpdateRequest(BaseModel):
     username: str | None = Field(default=None, min_length=3)
     password: str | None = Field(default=None, min_length=8)
     email: EmailStr | None = None
+    mental_health_history: bool | None = None
+    academic_performance: int | None = Field(default=None, ge=0, le=5)
+    social_support: int | None = Field(default=None, ge=0, le=3)
 
 class UserAuthenticationRequest(BaseModel):
     username: str
     password: str
 
-class UserAuthenticationResponse(BaseModel):
+class UserAuthenticationResponse(UserBase):
     authenticated: bool
     access_token: str | None = None
     error: list[str] | None = None
