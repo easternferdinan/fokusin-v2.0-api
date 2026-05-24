@@ -1,12 +1,14 @@
+from models.member import Member
+from api.deps import get_current_user
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.deps import get_db
-from schemas.member import UserCreateRequest, UserResponse, UserAuthenticationRequest, UserAuthenticationResponse
+from schemas.member import UserCreateRequest, UserResponse, UserAuthenticationRequest, UserAuthenticationResponse, UserUpdateRequest
 from services.auth_service import (
     register_user_service,
     authenticate_user_service,
-    get_user_by_username_or_email_service
+    update_user_service
 )
 
 router = APIRouter()
@@ -16,17 +18,16 @@ def register(user_in: UserCreateRequest, db: Session = Depends(get_db)):
     """
     Register a new member.
     """
-    # Check if user already exists
-    existing_user = get_user_by_username_or_email_service(db, user_in.username, user_in.email)
+    user = register_user_service(db, user_in)
 
-    if existing_user:
+    # If register_user_service return None, it means username or email already exists
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username atau email sudah terdaftar"
         )
 
-    # Create new member
-    return register_user_service(db, user_in)
+    return user
 
 @router.post("/login", response_model=UserAuthenticationResponse)
 def login(auth_in: UserAuthenticationRequest, db: Session = Depends(get_db)):
@@ -39,6 +40,18 @@ def login(auth_in: UserAuthenticationRequest, db: Session = Depends(get_db)):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password"
+        )
+    
+    return user
+
+@router.put("/update", response_model=UserResponse, status_code=status.HTTP_200_OK)
+def update(user_in: UserUpdateRequest, db: Session = Depends(get_db), user: Member = Depends(get_current_user)):
+    updated_user = update_user_service(db, user.user_id, user_in)
+
+    if updated_user is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User tidak ditemukan"
         )
     
     return user
