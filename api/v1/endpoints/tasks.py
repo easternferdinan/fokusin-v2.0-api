@@ -3,8 +3,6 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from api.deps import get_db, get_current_user
-from core.exceptions import UserUnauthorizedError
-from enums.member_enums import MemberRole
 from models.member import Member
 from schemas.task import TaskCreateRequest, TaskResponse, TaskUpdateRequest, TaskCompletionRequest
 from services.tasks_service import (
