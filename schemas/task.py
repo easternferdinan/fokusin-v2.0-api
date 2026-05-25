@@ -10,7 +10,6 @@ class TaskBase(BaseModel):
     priority: TaskPriority
     target_duration: int = Field(gt=0)
     deadline: datetime
-    reminder_offset: int = Field(ge=0)
 
 class TaskResponse(TaskBase):
     task_id: UUID4
@@ -32,7 +31,6 @@ class TaskUpdateRequest(BaseModel):
     priority: TaskPriority | None = None
     target_duration: int | None = Field(default=None, gt=0)
     deadline: datetime | None = None
-    reminder_offset: int | None = Field(default=None, ge=0)
 
 class TaskCompletionRequest(BaseModel):
     completed: bool

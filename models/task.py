@@ -17,7 +17,6 @@ class Task(Base):
     priority = Column(SQLEnum(TaskPriority), nullable=False)
     target_duration = Column(Integer, nullable=False) # in minutes
     deadline = Column(DateTime, nullable=False)
-    reminder_offset = Column(Integer, default=0) # in minutes before deadline
     
     completed = Column(Boolean, default=False)
     completed_at = Column(DateTime, nullable=True)
