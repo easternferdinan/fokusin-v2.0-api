@@ -1,6 +1,7 @@
+from enums.task_enums import TaskPriority
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 from typing import List
 import uuid
 
@@ -16,6 +17,60 @@ def get_tasks_service(db: Session, user_id: uuid.UUID) -> List[Task]:
         return db.query(Task).filter(Task.user_id == user_id).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve tasks") from e
+
+def get_incomplete_tasks_service(db: Session, user_id: uuid.UUID, count_only: bool = False) -> List[Task] | int:
+    """
+    Retrieve or count all incomplete tasks for a specific user.
+    """
+    try:
+        if count_only:
+            return db.query(Task).filter(
+                Task.user_id == user_id,
+                Task.completed == False
+            ).count()
+
+        return db.query(Task).filter(
+            Task.user_id == user_id,
+            Task.completed == False
+        ).all()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve incomplete tasks") from e
+
+def get_high_priority_tasks_service(db: Session, user_id: uuid.UUID, count_only: bool = False) -> List[Task] | int:
+    """
+    Retrieve or count all high priority tasks for a specific user.
+    """
+    try:
+        if count_only:
+            return db.query(Task).filter(
+                Task.user_id == user_id,
+                Task.priority == TaskPriority.TINGGI
+            ).count()
+
+        return db.query(Task).filter(
+            Task.user_id == user_id,
+            Task.priority == TaskPriority.TINGGI
+        ).all()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve high priority tasks") from e
+
+def get_deadline_is_tomorrow_tasks_service(db: Session, user_id: uuid.UUID, count_only: bool = False) -> List[Task] | int:
+    """
+    Retrieve or count all tasks for a specific user that have a deadline of tomorrow.
+    """
+    try:
+        if count_only:
+            return db.query(Task).filter(
+                Task.user_id == user_id,
+                Task.deadline == datetime.now(UTC).date() + timedelta(days=1)
+            ).count()
+
+        return db.query(Task).filter(
+            Task.user_id == user_id,
+            Task.deadline == datetime.now(UTC).date() + timedelta(days=1)
+        ).all()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve deadline is tomorrow tasks") from e
 
 def get_task_service(db: Session, task_id: str, user_id: uuid.UUID) -> Task | None:
     """

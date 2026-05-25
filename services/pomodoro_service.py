@@ -1,3 +1,5 @@
+from datetime import datetime
+from sqlalchemy import Date
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List
@@ -15,6 +17,33 @@ def get_pomodoros_service(db: Session, user_id: uuid.UUID) -> List[PomodoroSessi
         return db.query(PomodoroSession).filter(PomodoroSession.user_id == user_id).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve pomodoro sessions") from e
+
+def get_today_pomodoros_service(db: Session, user_id: uuid.UUID) -> List[PomodoroSession]:
+    """
+    Retrieve all pomodoro sessions for a specific user that were created today.
+    """
+    try:
+        return db.query(PomodoroSession).filter(
+            PomodoroSession.user_id == user_id,
+            PomodoroSession.created_at.cast(Date) == datetime.now().date()
+        ).all()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve pomodoro sessions") from e
+
+def get_today_pomodoro_minutes_service(db: Session, user_id: uuid.UUID) -> int:
+    """
+    Retrieve the total pomodoro minutes for a specific user that were created today.
+    """
+    try:
+        result = db.query(PomodoroSession.elapsed_time).filter(
+            PomodoroSession.user_id == user_id,
+            PomodoroSession.created_at.cast(Date) == datetime.now().date()
+        ).all()
+
+        total_minutes = sum(int(elapsed_time) for elapsed_time in result)
+        return int(total_minutes)
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve pomodoro minutes") from e
 
 def get_pomodoro_service(db: Session, pomodoro_id: str, user_id: uuid.UUID) -> PomodoroSession | None:
     """
