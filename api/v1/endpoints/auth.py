@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.deps import get_db
-from schemas.member import UserCreateRequest, UserResponse, UserAuthenticationRequest, UserAuthenticationResponse, UserUpdateRequest
+from schemas.member import UserCreateRequest, UserResponse, UserAuthenticationRequest, UserAuthenticationSuccessResponse, UserAuthenticationFailedResponse, UserUpdateRequest
 from services.auth_service import (
     register_user_service,
     authenticate_user_service,
@@ -29,7 +29,7 @@ def register(user_in: UserCreateRequest, db: Session = Depends(get_db)):
 
     return user
 
-@router.post("/login", response_model=UserAuthenticationResponse)
+@router.post("/login", response_model=UserAuthenticationSuccessResponse)
 def login(auth_in: UserAuthenticationRequest, db: Session = Depends(get_db)):
     """
     Authenticate a user and return a token.
@@ -39,7 +39,7 @@ def login(auth_in: UserAuthenticationRequest, db: Session = Depends(get_db)):
     if not user.authenticated:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid username or password"
+            detail="Username atau password salah"
         )
     
     return user

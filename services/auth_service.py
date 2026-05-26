@@ -5,7 +5,7 @@ from pwdlib import PasswordHash
 
 from core.exceptions import DatabaseOperationError
 from models.member import Member
-from schemas.member import UserCreateRequest, UserAuthenticationRequest, UserAuthenticationResponse, UserUpdateRequest
+from schemas.member import UserCreateRequest, UserAuthenticationRequest, UserUpdateRequest, UserAuthenticationSuccessResponse, UserAuthenticationFailedResponse
 from enums.member_enums import MemberRole
 from utils.jwt import create_access_token
 
@@ -44,7 +44,7 @@ def register_user_service(db: Session, user_in: UserCreateRequest) -> Member:
         db.rollback()
         raise DatabaseOperationError("Failed to register user") from e
 
-def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -> UserAuthenticationResponse | None:
+def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -> UserAuthenticationSuccessResponse | UserAuthenticationFailedResponse:
     """
     Authenticate a user.
     """
@@ -53,13 +53,13 @@ def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -
         
         hasher = PasswordHash.recommended()
         if not user or not hasher.verify(auth_in.password, user.password):
-            return UserAuthenticationResponse(
+            return UserAuthenticationFailedResponse(
                 authenticated=False,
                 error=["Invalid username or password"]
             )
         
         access_token = create_access_token(user)
-        return UserAuthenticationResponse(
+        return UserAuthenticationSuccessResponse(
             fullname=user.fullname,
             username=user.username,
             email=user.email,

@@ -33,7 +33,25 @@ class UserAuthenticationRequest(BaseModel):
     username: str
     password: str
 
-class UserAuthenticationResponse(UserBase):
-    authenticated: bool
-    access_token: str | None = None
-    error: list[str] | None = None
+class UserAuthenticationSuccessResponse(UserBase):
+    """
+    Response model for successful user authentication.
+    Inherits from UserBase and adds authentication-specific fields.
+    """
+    authenticated: bool = True
+    access_token: str
+
+    class Config:
+        from_attributes = True
+
+class UserAuthenticationFailedResponse(BaseModel):
+    """
+    Response model for failed user authentication.
+    Does not inherit from UserBase as no user data is returned.
+    """
+    authenticated: bool = False
+    access_token: None = None
+    error: list[str] | str = ["Autentikasi gagal"]
+
+    class Config:
+        from_attributes = True
