@@ -1,7 +1,6 @@
 from enums.pomodoro_enums import PomodoroStatus
 from pydantic import BaseModel, UUID4
 from datetime import datetime
-from typing import Optional
 
 class PomodoroBase(BaseModel):
     title: str
@@ -22,20 +21,21 @@ class PomodoroResponse(PomodoroBase):
         from_attributes = True
 
 class PomodoroCreateRequest(PomodoroBase):
-    pass
+    session_end: datetime | None = None
+    elapsed_time: int | None = None
 
 class PomodoroUpdateRequest(BaseModel):
     pomodoro_id: UUID4
-    title: Optional[str] = None
-    status: Optional[PomodoroStatus] = None
-    session_start: Optional[datetime] = None
-    session_end: Optional[datetime] = None
-    started_at: Optional[datetime] = None
-    completed_at: Optional[datetime] = None
-    elapsed_time: Optional[int] = None
-    duration: Optional[int] = None
-    break_duration: Optional[int] = None
-    completed: Optional[bool] = None
+    title: str | None = None
+    status: PomodoroStatus | None = None
+    session_start: datetime | None = None
+    session_end: datetime | None = None
+    started_at: datetime | None = None
+    completed_at: datetime | None = None
+    elapsed_time: int | None = None
+    duration: int | None = None
+    break_duration: int | None = None
+    completed: bool | None = None
 
 class PomodoroStartRequest(BaseModel):
     pomodoro_id: UUID4
