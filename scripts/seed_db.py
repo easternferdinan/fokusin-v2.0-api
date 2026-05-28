@@ -12,6 +12,7 @@ from models import Member, Task, PomodoroSession, Notification, Report, StressAn
 from enums.member_enums import MemberRole
 from enums.task_enums import TaskCategory, TaskPriority
 from enums.log_enums import LogLevel, LogEvent
+from enums.pomodoro_enums import PomodoroStatus
 
 def seed_db():
     print("Initializing database...")
@@ -108,21 +109,23 @@ def seed_db():
             PomodoroSession(
                 user_id=user1.user_id,
                 title="Deep Work: AI",
-                status="stopped",
+                status=PomodoroStatus.STOPPED,
                 session_start=datetime.now(UTC) - timedelta(hours=2),
                 session_end=datetime.now(UTC) - timedelta(hours=1, minutes=35),
                 elapsed_time=1500, # 25 mins
                 duration=25,
+                break_duration=5,
                 completed=True
             ),
             PomodoroSession(
                 user_id=user2.user_id,
                 title="Math Study",
-                status="paused",
+                status=PomodoroStatus.PAUSED,
                 session_start=datetime.now(UTC) - timedelta(hours=1),
                 session_end=datetime.now(UTC) - timedelta(minutes=45),
                 elapsed_time=900, # 15 mins
                 duration=25,
+                break_duration=5,
                 completed=False
             )
         ]
