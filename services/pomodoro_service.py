@@ -1,3 +1,4 @@
+from datetime import UTC
 from datetime import datetime
 from sqlalchemy import Date
 from sqlalchemy.orm import Session
@@ -62,7 +63,13 @@ def create_pomodoro_service(db: Session, pomodoro_in: PomodoroCreateRequest, use
     Log a new pomodoro session for a specific user.
     """
     try:
-        db_pomodoro = PomodoroSession(**pomodoro_in.dict(), user_id=user_id)
+        pomodoroData = {
+            **pomodoro_in.dict(),
+            "user_id": user_id,
+            "session_start": datetime.now(UTC)
+        }
+
+        db_pomodoro = PomodoroSession(**pomodoroData)
         db.add(db_pomodoro)
         db.commit()
         db.refresh(db_pomodoro)
