@@ -6,8 +6,8 @@ class PomodoroBase(BaseModel):
     title: str
     status: PomodoroStatus
     session_start: datetime
-    session_end: datetime
-    elapsed_time: int
+    session_end: datetime | None = None
+    elapsed_time: int | None = None
     duration: int
     break_duration: int
     completed: bool
@@ -27,13 +27,10 @@ class PomodoroCreateRequest(BaseModel):
     break_duration: int
 
 class PomodoroUpdateRequest(BaseModel):
-    pomodoro_id: UUID4
     title: str | None = None
     status: PomodoroStatus | None = None
     session_start: datetime | None = None
     session_end: datetime | None = None
-    started_at: datetime | None = None
-    completed_at: datetime | None = None
     elapsed_time: int | None = None
     duration: int | None = None
     break_duration: int | None = None

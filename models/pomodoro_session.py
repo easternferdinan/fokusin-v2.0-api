@@ -15,7 +15,7 @@ class PomodoroSession(Base):
     status = Column(SQLEnum(PomodoroStatus), nullable=False, default=PomodoroStatus.ACTIVE)
     
     session_start = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
-    session_end = Column(DateTime, nullable=False)
+    session_end = Column(DateTime, nullable=True)
     
     elapsed_time = Column(Integer, default=0) # in seconds
     duration = Column(Integer, nullable=False) # intended duration in minutes
