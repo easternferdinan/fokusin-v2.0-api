@@ -20,9 +20,11 @@ class PomodoroResponse(PomodoroBase):
     class Config:
         from_attributes = True
 
-class PomodoroCreateRequest(PomodoroBase):
-    session_end: datetime | None = None
-    elapsed_time: int | None = None
+class PomodoroCreateRequest(BaseModel):
+    title: str
+    status: PomodoroStatus = PomodoroStatus.ACTIVE
+    duration: int
+    break_duration: int
 
 class PomodoroUpdateRequest(BaseModel):
     pomodoro_id: UUID4

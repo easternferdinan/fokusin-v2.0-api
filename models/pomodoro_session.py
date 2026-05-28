@@ -12,14 +12,14 @@ class PomodoroSession(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("members.user_id"), nullable=False)
     
     title = Column(String, nullable=False)
-    status = Column(SQLEnum(PomodoroStatus), nullable=False)
+    status = Column(SQLEnum(PomodoroStatus), nullable=False, default=PomodoroStatus.ACTIVE)
     
-    session_start = Column(DateTime, nullable=False)
+    session_start = Column(DateTime, nullable=False, default=lambda: datetime.now(UTC))
     session_end = Column(DateTime, nullable=False)
     
-    elapsed_time = Column(Integer, nullable=False) # in seconds
+    elapsed_time = Column(Integer, default=0) # in seconds
     duration = Column(Integer, nullable=False) # intended duration in minutes
-    break_duration = Column(Integer, default=5) # in minutes
+    break_duration = Column(Integer, nullable=False) # in minutes
     
     completed = Column(Boolean, default=False)
     
