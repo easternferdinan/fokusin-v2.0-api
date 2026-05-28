@@ -10,6 +10,9 @@ from services.pomodoro_service import (
     get_pomodoro_service,
     create_pomodoro_service,
     update_pomodoro_service,
+    resume_pomodoro_service,
+    pause_pomodoro_service,
+    complete_pomodoro_service,
     delete_pomodoro_service
 )
 
@@ -48,6 +51,36 @@ def update_pomodoro(pomodoro_id: str, pomodoro_in: PomodoroUpdateRequest, db: Se
     if not pomodoro:
         raise HTTPException(status_code=404, detail="Pomodoro session not found")
     return pomodoro
+
+@router.patch("/{pomodoro_id}/resume", response_model=PomodoroResponse)
+def resume_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
+    """
+    Resume a paused pomodoro session for the current user.
+    """
+    pomodoro = get_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    if not pomodoro:
+        raise HTTPException(status_code=404, detail="Pomodoro session not found")
+    return resume_pomodoro_service(db, pomodoro_id, current_user.user_id)
+
+@router.patch("/{pomodoro_id}/pause", response_model=PomodoroResponse)
+def pause_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
+    """
+    Pause an active pomodoro session for the current user.
+    """
+    pomodoro = get_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    if not pomodoro:
+        raise HTTPException(status_code=404, detail="Pomodoro session not found")
+    return pause_pomodoro_service(db, pomodoro_id, current_user.user_id)
+
+@router.patch("/{pomodoro_id}/complete", response_model=PomodoroResponse)
+def complete_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
+    """
+    Mark a pomodoro session as complete for the current user.
+    """
+    pomodoro = get_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    if not pomodoro:
+        raise HTTPException(status_code=404, detail="Pomodoro session not found")
+    return complete_pomodoro_service(db, pomodoro_id, current_user.user_id)
 
 @router.delete("/{pomodoro_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):

@@ -35,16 +35,3 @@ class PomodoroUpdateRequest(BaseModel):
     duration: int | None = None
     break_duration: int | None = None
     completed: bool | None = None
-
-class PomodoroStartRequest(BaseModel):
-    pomodoro_id: UUID4
-
-class PomodoroStopRequest(BaseModel):
-    pomodoro_id: UUID4
-
-class PomodoroCompletionRequest(BaseModel):
-    pomodoro_id: UUID4
-    completed: bool
-
-class PomodoroDeleteRequest(BaseModel):
-    pomodoro_id: UUID4
