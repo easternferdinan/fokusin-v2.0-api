@@ -48,13 +48,13 @@ def create_stress_analysis_service(db: Session, data: StressAnalysisCreateReques
         # Log the error if needed
         raise DatabaseOperationError(f"An unexpected error occurred during stress analysis: {str(e)}") from e
 
-def get_all_stress_analyses_service(db: Session, user_id: uuid.UUID) -> List[StressAnalysis]:
+def get_all_stress_analysis_service(db: Session, user_id: uuid.UUID) -> List[StressAnalysis]:
     """
-    Retrieve all stress analyses for a specific user.
+    Retrieve all stress analysis for a specific user.
     """
     try:
         return db.query(StressAnalysis).filter(
             StressAnalysis.user_id == user_id
         ).order_by(StressAnalysis.created_at.desc()).all()
     except SQLAlchemyError as e:
-        raise DatabaseOperationError("Failed to retrieve stress analyses") from e
+        raise DatabaseOperationError("Failed to retrieve stress analysis") from e

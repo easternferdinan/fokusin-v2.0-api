@@ -8,7 +8,7 @@ from schemas.stress_analysis import StressAnalysisCreateRequest, StressAnalysisR
 from services.stress_analysis_service import (
     get_latest_stress_analysis_service,
     create_stress_analysis_service,
-    get_all_stress_analyses_service
+    get_all_stress_analysis_service
 )
 
 router = APIRouter()
@@ -48,4 +48,4 @@ def get_stress_analysis_history(
     """
     Retrieve all stress analysis history for the current user.
     """
-    return get_all_stress_analyses_service(db, current_user.user_id)
+    return get_all_stress_analysis_service(db, current_user.user_id)
