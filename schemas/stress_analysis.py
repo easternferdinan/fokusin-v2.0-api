@@ -1,5 +1,6 @@
 from pydantic import BaseModel, UUID4
 from datetime import datetime
+from enums.stress_level import StressLevelEnum
 
 class StressAnalysisBase(BaseModel):
     self_esteem: int
@@ -13,7 +14,7 @@ class StressAnalysisBase(BaseModel):
 
 class StressAnalysisResponse(StressAnalysisBase):
     analysis_id: UUID4
-    stress_level: int
+    stress_level: StressLevelEnum
     created_at: datetime
 
     class Config:

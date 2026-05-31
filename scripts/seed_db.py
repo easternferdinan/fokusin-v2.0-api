@@ -13,6 +13,7 @@ from enums.member_enums import MemberRole
 from enums.task_enums import TaskCategory, TaskPriority
 from enums.log_enums import LogLevel, LogEvent
 from enums.pomodoro_enums import PomodoroStatus
+from enums.stress_level import StressLevelEnum
 
 def seed_db():
     print("Initializing database...")
@@ -141,7 +142,7 @@ def seed_db():
                 headache=1,
                 sleep_quality=7,
                 study_load=3,
-                stress_level=2
+                stress_level=StressLevelEnum.SEDANG
             ),
             StressAnalysis(
                 user_id=user2.user_id,
@@ -150,7 +151,7 @@ def seed_db():
                 headache=4,
                 sleep_quality=4,
                 study_load=8,
-                stress_level=7
+                stress_level=StressLevelEnum.TINGGI
             )
         ]
         db.add_all(stress_records)

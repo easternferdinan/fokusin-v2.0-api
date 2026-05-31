@@ -8,6 +8,7 @@ from core.exceptions import DatabaseOperationError
 from models.stress_analysis import StressAnalysis
 from schemas.stress_analysis import StressAnalysisCreateRequest
 from ml.stress_predictor import get_predictor
+from enums.stress_level import StressLevelEnum
 
 def get_latest_stress_analysis_service(db: Session, user_id: uuid.UUID) -> StressAnalysis | None:
     """
@@ -27,7 +28,16 @@ def create_stress_analysis_service(db: Session, data: StressAnalysisCreateReques
     try:
         # Get the predictor and perform prediction
         predictor = get_predictor()
-        stress_level = predictor.predict(data.model_dump())
+        prediction_result = predictor.predict(data.model_dump())
+        
+        # Map prediction result to Enum
+        stress_mapping = {
+            1: StressLevelEnum.RENDAH,
+            2: StressLevelEnum.SEDANG,
+            3: StressLevelEnum.TINGGI
+        }
+        
+        stress_level = stress_mapping.get(int(prediction_result), StressLevelEnum.SEDANG)
         
         # Create database record
         db_analysis = StressAnalysis(

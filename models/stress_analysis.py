@@ -1,8 +1,9 @@
-from sqlalchemy import Column, Integer, DateTime, Boolean, ForeignKey, UUID
+from sqlalchemy import Column, Integer, DateTime, Boolean, ForeignKey, UUID, Enum
 from sqlalchemy.orm import relationship
 from datetime import datetime, UTC
 from db.session import Base
 import uuid
+from enums.stress_level import StressLevelEnum
 
 class StressAnalysis(Base):
     __tablename__ = "stress_analysis"
@@ -15,7 +16,7 @@ class StressAnalysis(Base):
     headache = Column(Integer, nullable=False)
     sleep_quality = Column(Integer, nullable=False)
     study_load = Column(Integer, nullable=False)
-    stress_level = Column(Integer, nullable=False)
+    stress_level = Column(Enum(StressLevelEnum), nullable=False)
     
     created_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
