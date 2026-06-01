@@ -59,14 +59,4 @@ def create_stress_analysis(
     """
     Perform a new stress analysis for the current user.
     """
-    return create_stress_analysis_service(db, analysis_in, current_user.user_id)
-
-@router.get("/history", response_model=List[StressAnalysisResponse])
-def get_stress_analysis_history(
-    db: Session = Depends(get_db),
-    current_user: Member = Depends(get_current_user)
-):
-    """
-    Retrieve all stress analysis history for the current user.
-    """
-    return get_all_stress_analysis_service(db, current_user.user_id)
+    return create_stress_analysis_service(db, analysis_in, current_user)
