@@ -23,13 +23,6 @@ def get_tasks(db: Session = Depends(get_db), current_user: Member = Depends(get_
     """
     return get_tasks_service(db, current_user.user_id)
 
-@router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
-def create_task(task_in: TaskCreateRequest, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
-    """
-    Create a new task for the current user.
-    """
-    return create_task_service(db, task_in, current_user.user_id)
-
 @router.get("/{task_id}", response_model=TaskResponse)
 def get_task(task_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
     """
@@ -39,6 +32,13 @@ def get_task(task_id: str, db: Session = Depends(get_db), current_user: Member =
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
+
+@router.post("/", response_model=TaskResponse, status_code=status.HTTP_201_CREATED)
+def create_task(task_in: TaskCreateRequest, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
+    """
+    Create a new task for the current user.
+    """
+    return create_task_service(db, task_in, current_user.user_id)
 
 @router.put("/{task_id}", response_model=TaskResponse)
 def update_task(task_id: str, task_in: TaskUpdateRequest, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
