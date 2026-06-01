@@ -21,6 +21,26 @@ def get_latest_stress_analysis_service(db: Session, user_id: uuid.UUID) -> Stres
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve latest stress analysis") from e
 
+def get_all_stress_analysis_service(db: Session, user_id: uuid.UUID) -> List[StressAnalysis]:
+    """
+    Retrieve all stress analysis for a specific user.
+    """
+    try:
+        return db.query(StressAnalysis).filter(
+            StressAnalysis.user_id == user_id
+        ).order_by(StressAnalysis.created_at.desc()).all()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve stress analysis") from e
+
+def get_today_stress_assesment_count_service(db: Session, user_id: uuid.UUID) -> int:
+    try:
+        return db.query(StressAnalysis).filter(
+            StressAnalysis.user_id == user_id,
+            StressAnalysis.created_at.cast(Date) == datetime.now(UTC).date()
+        ).count()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve stress analysis count") from e
+
 def calculate_study_load_service(db: Session, user_id: uuid.UUID) -> int:
     tasks_done_today = get_tasks_done_today_service(db, user_id)
 
@@ -109,13 +129,26 @@ def calculate_study_load_service(db: Session, user_id: uuid.UUID) -> int:
         # Log the error if needed
         raise DatabaseOperationError(f"An unexpected error occurred during stress analysis: {str(e)}") from e
 
-def get_all_stress_analysis_service(db: Session, user_id: uuid.UUID) -> List[StressAnalysis]:
-    """
-    Retrieve all stress analysis for a specific user.
-    """
+def check_stress_analysis_requirements_service(db: Session, user_id: uuid.UUID) -> StressAnalysisRequirementsStatusResponse:
     try:
-        return db.query(StressAnalysis).filter(
-            StressAnalysis.user_id == user_id
-        ).order_by(StressAnalysis.created_at.desc()).all()
+        task_done_today = len(get_tasks_done_today_service(db, user_id))
+        pomodoro_done_today = get_today_pomodoro_minutes_service(db, user_id)
+        stress_assesment_today = get_today_stress_assesment_count_service(db, user_id)
+
+        response = StressAnalysisRequirementsStatusResponse()
+
+        if task_done_today > 0:
+            response.task_done_today = True
+        
+        if pomodoro_done_today > 0:
+            response.pomodoro_done_today = True
+        
+        if stress_assesment_today > 0:
+            response.stress_assesment_done_today = True
+        
+        return response
     except SQLAlchemyError as e:
-        raise DatabaseOperationError("Failed to retrieve stress analysis") from e
+        raise DatabaseOperationError("Failed to check report requirements") from e
+    except Exception as e:
+        raise DatabaseOperationError(f"An unexpected error occurred during check report requirements: {str(e)}") from e
+    
