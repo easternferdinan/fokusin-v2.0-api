@@ -12,16 +12,7 @@ def get_dashboard_data_service(db: Session, user_id: UUID4) -> DashboardResponse
     Retrieve all data for the dashboard for the current user.
     """
     latest_stress_analysis = get_latest_stress_analysis_service(db, user_id)
-    
-    if latest_stress_analysis:
-        if (latest_stress_analysis.stress_level == 1):
-            latest_burnout_prediction = "rendah"
-        elif (latest_stress_analysis.stress_level == 2):
-            latest_burnout_prediction = "sedang"
-        elif (latest_stress_analysis.stress_level == 3):
-            latest_burnout_prediction = "tinggi"
-    else:
-        latest_burnout_prediction = None
+    latest_burnout_prediction = latest_stress_analysis.stress_level.lower() if latest_stress_analysis else None
 
     incomplete_tasks_count = get_incomplete_tasks_service(db, user_id, count_only=True)
     high_priority_tasks_count = get_high_priority_tasks_service(db, user_id, count_only=True)
