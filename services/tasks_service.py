@@ -1,3 +1,4 @@
+from sqlalchemy import Date
 from enums.task_enums import TaskPriority
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -17,6 +18,19 @@ def get_tasks_service(db: Session, user_id: uuid.UUID) -> List[Task]:
         return db.query(Task).filter(Task.user_id == user_id).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve tasks") from e
+
+def get_tasks_done_today_service(db: Session, user_id: uuid.UUID) -> List[Task]:
+    """
+    Retrieve all tasks for a specific user that are done today.
+    """
+    try:
+        return db.query(Task).filter(
+            Task.user_id == user_id,
+            Task.completed == True,
+            Task.completed_at.cast(Date) == datetime.now(UTC).date()
+        ).all()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve tasks done today") from e
 
 def get_incomplete_tasks_service(db: Session, user_id: uuid.UUID, count_only: bool = False) -> List[Task] | int:
     """
