@@ -21,7 +21,58 @@ def get_latest_stress_analysis_service(db: Session, user_id: uuid.UUID) -> Stres
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve latest stress analysis") from e
 
-def create_stress_analysis_service(db: Session, data: StressAnalysisCreateRequest, user_id: uuid.UUID) -> StressAnalysis:
+def calculate_study_load_service(db: Session, user_id: uuid.UUID) -> int:
+    tasks_done_today = get_tasks_done_today_service(db, user_id)
+
+    if not tasks_done_today:
+        return 1
+
+    priority_weights = {
+        TaskPriority.RENDAH: 1.0,
+        TaskPriority.SEDANG: 1.3,
+        TaskPriority.TINGGI: 1.6,
+    }
+
+    today = datetime.now(UTC).date()
+    total_weighted_minutes = 0.0
+
+    for task in tasks_done_today:
+        priority_weight = priority_weights.get(task.priority, 1.0)
+
+        days_until_deadline = (task.deadline.date() - today).days
+        if days_until_deadline > 3:
+            deadline_weight = 1.0
+        elif days_until_deadline >= 2:
+            deadline_weight = 1.2
+        elif days_until_deadline == 1:
+            deadline_weight = 1.5
+        else:
+            deadline_weight = 1.8
+
+        weighted_minutes = task.target_duration * priority_weight * deadline_weight
+        total_weighted_minutes += weighted_minutes
+
+    avg_elapsed_result = db.query(func.avg(PomodoroSession.elapsed_time)).filter(
+        PomodoroSession.user_id == user_id,
+        PomodoroSession.created_at.cast(Date) == today
+    ).scalar()
+
+    if not avg_elapsed_result:
+        return 1
+
+    avg_pomodoro_minutes = float(avg_elapsed_result)
+    pomodoro_equivalent = total_weighted_minutes / avg_pomodoro_minutes
+
+    if pomodoro_equivalent <= 1.5:
+        return 1
+    elif pomodoro_equivalent <= 3.5:
+        return 2
+    elif pomodoro_equivalent <= 5.5:
+        return 3
+    elif pomodoro_equivalent <= 8.5:
+        return 4
+    else:
+        return 5
     """
     Perform stress analysis and save the result.
     """
