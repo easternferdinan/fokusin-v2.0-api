@@ -23,5 +23,17 @@ class StressAnalysis(Base):
     # Relationships
     member = relationship("Member", back_populates="stress_analyses")
 
+    @property
+    def mental_health_history(self):
+        return self.member.mental_health_history if self.member else False
+
+    @property
+    def academic_performance(self):
+        return self.member.academic_performance if self.member else 0
+
+    @property
+    def social_support(self):
+        return self.member.social_support if self.member else 0
+
     def __repr__(self):
         return f"<StressAnalysis(stress_level='{self.stress_level}', created_at='{self.created_at}')>"
