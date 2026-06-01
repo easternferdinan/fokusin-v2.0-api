@@ -13,7 +13,17 @@ from services.stress_analysis_service import (
 
 router = APIRouter()
 
-@router.get("/", response_model=StressAnalysisResponse)
+@router.get("/", response_model=List[StressAnalysisResponse])
+def get_stress_analysis_data(
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user)
+):
+    """
+    Retrieve all stress analysis data for the current user.
+    """
+    return get_all_stress_analysis_service(db, current_user.user_id)
+
+@router.get("/latest", response_model=StressAnalysisResponse)
 def get_latest_stress_analysis(
     db: Session = Depends(get_db),
     current_user: Member = Depends(get_current_user)
