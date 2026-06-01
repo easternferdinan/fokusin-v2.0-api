@@ -4,11 +4,12 @@ from typing import List
 
 from api.deps import get_db, get_current_user
 from models.member import Member
-from schemas.stress_analysis import StressAnalysisCreateRequest, StressAnalysisResponse
+from schemas.stress_analysis import StressAnalysisCreateRequest, StressAnalysisResponse, StressAnalysisRequirementsStatusResponse
 from services.stress_analysis_service import (
     get_latest_stress_analysis_service,
+    check_stress_analysis_requirements_service,
     create_stress_analysis_service,
-    get_all_stress_analysis_service
+    get_all_stress_analysis_service,
 )
 
 router = APIRouter()
@@ -38,6 +39,16 @@ def get_latest_stress_analysis(
             detail="No stress analysis found for this user."
         )
     return analysis
+
+@router.get("/requirements-status", response_model=StressAnalysisRequirementsStatusResponse)
+def get_stress_analysis_requirements_status(
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user)
+):
+    """
+    Retrieve status of requirements to generate stress analysis report.
+    """
+    return check_stress_analysis_requirements_service(db, current_user.user_id)
 
 @router.post("/", response_model=StressAnalysisResponse, status_code=status.HTTP_201_CREATED)
 def create_stress_analysis(
