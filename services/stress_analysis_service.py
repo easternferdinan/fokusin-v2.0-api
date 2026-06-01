@@ -1,3 +1,5 @@
+from sqlalchemy import Date, func
+from services.pomodoro_service import get_today_pomodoro_minutes_service
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from datetime import datetime, UTC
@@ -5,10 +7,14 @@ import uuid
 from typing import List
 
 from core.exceptions import DatabaseOperationError
+from models.member import Member
+from models.pomodoro_session import PomodoroSession
 from models.stress_analysis import StressAnalysis
-from schemas.stress_analysis import StressAnalysisCreateRequest
+from schemas.stress_analysis import StressAnalysisCreateRequest, StressAnalysisRequirementsStatusResponse
+from services.tasks_service import get_tasks_done_today_service
 from ml.stress_predictor import get_predictor
 from enums.stress_level import StressLevelEnum
+from enums.task_enums import TaskPriority
 
 def get_latest_stress_analysis_service(db: Session, user_id: uuid.UUID) -> StressAnalysis | None:
     """
@@ -93,13 +99,23 @@ def calculate_study_load_service(db: Session, user_id: uuid.UUID) -> int:
         return 4
     else:
         return 5
+
+def create_stress_analysis_service(db: Session, data: StressAnalysisCreateRequest, user: Member) -> StressAnalysis:
     """
     Perform stress analysis and save the result.
     """
     try:
+        # Inject mental_health_history, academic_performance, social_support from member
+        # Inject study_load calculation
+        ml_data = data.model_dump()
+        ml_data["mental_health_history"] = user.mental_health_history
+        ml_data["academic_performance"] = user.academic_performance
+        ml_data["social_support"] = user.social_support
+        ml_data["study_load"] = calculate_study_load_service(db, user.user_id)
+
         # Get the predictor and perform prediction
         predictor = get_predictor()
-        prediction_result = predictor.predict(data.model_dump())
+        prediction_result = predictor.predict(ml_data)
         
         # Map prediction result to Enum
         stress_mapping = {
@@ -110,10 +126,13 @@ def calculate_study_load_service(db: Session, user_id: uuid.UUID) -> int:
         
         stress_level = stress_mapping.get(int(prediction_result), StressLevelEnum.SEDANG)
         
+        db_data = data.model_dump()
+        db_data["study_load"] = ml_data["study_load"]
+        
         # Create database record
         db_analysis = StressAnalysis(
-            **data.model_dump(),
-            user_id=user_id,
+            **db_data,
+            user_id=user.user_id,
             stress_level=stress_level
         )
         
