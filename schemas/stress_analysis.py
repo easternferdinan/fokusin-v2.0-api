@@ -33,3 +33,7 @@ class StressAnalysisFollowUpRequest(BaseModel):
 
 class StressAnalysisCreateRequest(StressAnalysisBase):
     pass
+
+class StressTrendResponse(BaseModel):
+    labels: list[str]
+    values: list[float]

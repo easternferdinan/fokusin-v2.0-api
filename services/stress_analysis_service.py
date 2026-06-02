@@ -170,4 +170,91 @@ def check_stress_analysis_requirements_service(db: Session, user_id: uuid.UUID) 
         raise DatabaseOperationError("Failed to check report requirements") from e
     except Exception as e:
         raise DatabaseOperationError(f"An unexpected error occurred during check report requirements: {str(e)}") from e
+
+def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> dict:
+    from datetime import timedelta
+    import calendar
+    
+    try:
+        today = datetime.now(UTC).date()
+        
+        if period == 'harian':
+            start_date = today - timedelta(days=6)
+        elif period == 'mingguan':
+            start_date = today - timedelta(days=27)
+        elif period == 'bulanan':
+            start_date = (today.replace(day=1) - timedelta(days=150)).replace(day=1)
+        else:
+            raise ValueError("Invalid period")
+
+        records = db.query(StressAnalysis).filter(
+            StressAnalysis.user_id == user_id,
+            StressAnalysis.created_at >= datetime.combine(start_date, datetime.min.time()).replace(tzinfo=UTC)
+        ).order_by(StressAnalysis.created_at.asc()).all()
+
+        stress_value_map = {
+            StressLevelEnum.RENDAH: 1,
+            StressLevelEnum.SEDANG: 2,
+            StressLevelEnum.TINGGI: 3,
+        }
+
+        labels = []
+        values = []
+
+        if period == 'harian':
+            buckets = {start_date + timedelta(days=day_offset): [] for day_offset in range(7)}
+            for record in records:
+                record_date = record.created_at.date()
+                if record_date in buckets:
+                    buckets[record_date].append(stress_value_map[record.stress_level])
+            
+            for bucket_date, stress_scores in buckets.items():
+                labels.append(bucket_date.strftime("%a"))
+                values.append(sum(stress_scores) / len(stress_scores) if stress_scores else 0.0)
+                
+        elif period == 'mingguan':
+            buckets = []
+            for week_offset in range(4):
+                week_start_date = today - timedelta(days=27 - week_offset * 7)
+                week_end_date = week_start_date + timedelta(days=6)
+                buckets.append({"start": week_start_date, "end": week_end_date, "stress_scores": []})
+                
+            for record in records:
+                record_date = record.created_at.date()
+                for week_bucket in buckets:
+                    if week_bucket["start"] <= record_date <= week_bucket["end"]:
+                        week_bucket["stress_scores"].append(stress_value_map[record.stress_level])
+                        break
+            
+            for week_bucket in buckets:
+                week_start_date = week_bucket['start']
+                label = f"{week_start_date.day} {week_start_date.strftime('%b')}"
+                labels.append(label)
+                stress_scores = week_bucket["stress_scores"]
+                values.append(sum(stress_scores) / len(stress_scores) if stress_scores else 0.0)
+
+        elif period == 'bulanan':
+            target_months = []
+            for month_offset in range(5, -1, -1):
+                target_month = today.month - month_offset
+                target_year = today.year
+                if target_month <= 0:
+                    target_month += 12
+                    target_year -= 1
+                target_months.append((target_year, target_month))
+                
+            buckets = { (target_year, target_month): [] for target_year, target_month in target_months }
+            for record in records:
+                year_month_key = (record.created_at.year, record.created_at.month)
+                if year_month_key in buckets:
+                    buckets[year_month_key].append(stress_value_map[record.stress_level])
+            
+            for (target_year, target_month), stress_scores in buckets.items():
+                labels.append(calendar.month_abbr[target_month])
+                values.append(sum(stress_scores) / len(stress_scores) if stress_scores else 0.0)
+
+        return {"labels": labels, "values": values}
+    except Exception as error:
+        raise DatabaseOperationError(f"Failed to get stress trend: {str(error)}") from error
+
     
