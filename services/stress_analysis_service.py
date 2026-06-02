@@ -173,8 +173,8 @@ def check_stress_analysis_requirements_service(db: Session, user_id: uuid.UUID) 
 
 def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> dict:
     from datetime import timedelta
-    import calendar
-    
+
+
     try:
         today = datetime.now(UTC).date()
         
@@ -198,6 +198,9 @@ def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> di
             StressLevelEnum.TINGGI: 3,
         }
 
+        DAY_LABELS_ID = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min']
+        MONTH_LABELS_ID = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des']
+
         labels = []
         values = []
 
@@ -209,7 +212,7 @@ def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> di
                     buckets[record_date].append(stress_value_map[record.stress_level])
             
             for bucket_date, stress_scores in buckets.items():
-                labels.append(bucket_date.strftime("%a"))
+                labels.append(DAY_LABELS_ID[bucket_date.weekday()])
                 values.append(sum(stress_scores) / len(stress_scores) if stress_scores else 0.0)
                 
         elif period == 'mingguan':
@@ -228,7 +231,7 @@ def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> di
             
             for week_bucket in buckets:
                 week_start_date = week_bucket['start']
-                label = f"{week_start_date.day} {week_start_date.strftime('%b')}"
+                label = f"{week_start_date.day} {MONTH_LABELS_ID[week_start_date.month]}"
                 labels.append(label)
                 stress_scores = week_bucket["stress_scores"]
                 values.append(sum(stress_scores) / len(stress_scores) if stress_scores else 0.0)
@@ -250,7 +253,7 @@ def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> di
                     buckets[year_month_key].append(stress_value_map[record.stress_level])
             
             for (target_year, target_month), stress_scores in buckets.items():
-                labels.append(calendar.month_abbr[target_month])
+                labels.append(MONTH_LABELS_ID[target_month])
                 values.append(sum(stress_scores) / len(stress_scores) if stress_scores else 0.0)
 
         return {"labels": labels, "values": values}
