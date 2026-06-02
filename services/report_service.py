@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 
 from core.exceptions import DatabaseOperationError
 from models.stress_analysis import StressAnalysis
+from schemas.report import StressTrendResponse, PotentialStressFactorsResponse
 from enums.stress_level import StressLevelEnum
 from utils.categorize import three_level_categorize
 from services.tasks_service import get_incomplete_tasks_service, get_deadline_is_tomorrow_tasks_service
 from services.stress_analysis_service import get_sleep_quality_service, get_all_stress_analysis_service
 
-def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> dict:
+def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> StressTrendResponse:
     '''
     Get stress trend for the current user.
 
@@ -108,11 +109,11 @@ def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> di
                 labels.append(MONTH_LABELS_ID[target_month])
                 values.append(sum(stress_scores) / len(stress_scores) if stress_scores else 0.0)
 
-        return {"labels": labels, "values": values}
+        return StressTrendResponse(labels=labels, values=values)
     except Exception as error:
         raise DatabaseOperationError(f"Failed to get stress trend: {str(error)}") from error
 
-def get_potential_stress_factors_service(db: Session, user_id: uuid.UUID) -> dict:
+def get_potential_stress_factors_service(db: Session, user_id: uuid.UUID) -> PotentialStressFactorsResponse:
     deadline_is_tomorrow_tasks = get_deadline_is_tomorrow_tasks_service(db, user_id, count_only=True)
     piling_up_tasks = get_incomplete_tasks_service(db, user_id, count_only=True)
     sleep_quality_list = get_sleep_quality_service(db, user_id, past_days_count=3)
@@ -132,11 +133,11 @@ def get_potential_stress_factors_service(db: Session, user_id: uuid.UUID) -> dic
     
     sleep_quality_mode = max(sleep_quality_counts, key=sleep_quality_counts.get)
 
-    return {
-        "deadline_is_tomorrow_tasks": three_level_categorize(deadline_is_tomorrow_tasks, 1, 2),
-        "piling_up_tasks": three_level_categorize(piling_up_tasks, 3, 6),
-        "sleep_quality": three_level_categorize(sleep_quality_mode, 1, 2, ["buruk", "sedang", "baik"])
-    }
+    return PotentialStressFactorsResponse(
+        deadline_is_tomorrow_tasks=three_level_categorize(deadline_is_tomorrow_tasks, 1, 2),
+        piling_up_tasks=three_level_categorize(piling_up_tasks, 3, 6),
+        sleep_quality=three_level_categorize(sleep_quality_mode, 1, 2, ["buruk", "sedang", "baik"])
+    )
 
 def get_stress_report_service(db: Session, user_id: uuid.UUID) -> dict:
     all_stress_analysis = get_all_stress_analysis_service(db, user_id)
