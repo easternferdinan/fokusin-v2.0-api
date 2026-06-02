@@ -1,3 +1,5 @@
+from enums.report_enums import ReportRecommendationColorLabelEnum, ReportRecommendationSubjectEnum
+from schemas.report import RecommendationResponse
 import uuid
 from datetime import datetime, UTC, timedelta
 from sqlalchemy.orm import Session
@@ -134,16 +136,95 @@ def get_potential_stress_factors_service(db: Session, user_id: uuid.UUID) -> Pot
     sleep_quality_mode = max(sleep_quality_counts, key=sleep_quality_counts.get)
 
     return PotentialStressFactorsResponse(
-        deadline_is_tomorrow_tasks=three_level_categorize(deadline_is_tomorrow_tasks, 1, 2),
+        deadline_is_tomorrow_tasks=three_level_categorize(deadline_is_tomorrow_tasks, 0, 2),
         piling_up_tasks=three_level_categorize(piling_up_tasks, 3, 6),
         sleep_quality=three_level_categorize(sleep_quality_mode, 1, 2, ["buruk", "sedang", "baik"])
     )
 
+# TODO: Refactor this abomination if possible. I hate it.
+# TODO: Add more "recommendations" based on other stress triggers. e.g. > 3 high priority tasks with < 3 days deadlines or > 5 medium priority tasks with < 3 days deadlines, etc.
+def get_recommendations_service(db: Session, user_id: uuid.UUID, potential_stress_factors: PotentialStressFactorsResponse) -> list[RecommendationResponse]:
+    recommendations: list[RecommendationResponse] = []
+
+    deadline_is_tomorrow_tasks = potential_stress_factors.deadline_is_tomorrow_tasks
+    piling_up_tasks = potential_stress_factors.piling_up_tasks
+    sleep_quality = potential_stress_factors.sleep_quality
+
+    if deadline_is_tomorrow_tasks == "tinggi":
+        recommendations.append(RecommendationResponse(
+            subject=ReportRecommendationSubjectEnum.DEADLINE_IS_TOMORROW_TASKS.value,
+            color_label=ReportRecommendationColorLabelEnum.DANGER.value,
+            messages=[
+                "Kamu memiliki banyak tugas dengan tenggat waktu penyelesaian besok.",
+                "Prioritaskan mengerjakan tugas-tugas tersebut agar tidak terlambat."
+            ]
+        ))
+    if piling_up_tasks == "tinggi":
+        recommendations.append(RecommendationResponse(
+            subject=ReportRecommendationSubjectEnum.PILING_UP_TASKS.value,
+            color_label=ReportRecommendationColorLabelEnum.DANGER.value,
+            messages=[
+                "Tugasmu yang belum selesai sudah menumpuk.",
+                "Segera selesaikan tugas-tugas tersebut berdasarkan urgensi dan tingkat kepentingannya."
+            ]
+        ))
+    if sleep_quality == "buruk":
+        recommendations.append(RecommendationResponse(
+            subject=ReportRecommendationSubjectEnum.SLEEP_QUALITY.value,
+            color_label=ReportRecommendationColorLabelEnum.DANGER.value,
+            messages=[
+                "Kualitas tidurmu kurang baik dalam 3 hari terakhir.",
+                "Usahakan tidur 7-8 jam setiap malam untuk menjaga kesehatan mental dan fisik!"
+            ]
+        ))
+
+    if deadline_is_tomorrow_tasks == "sedang":
+        recommendations.append(RecommendationResponse(
+            subject=ReportRecommendationSubjectEnum.DEADLINE_IS_TOMORROW_TASKS.value,
+            color_label=ReportRecommendationColorLabelEnum.WARNING.value,
+            messages=[
+                "Kamu memiliki beberapa tugas dengan tenggat waktu penyelesaian besok.",
+                "Kerjakan tugas-tugas tersebut agar tidak terlambat."
+            ]
+        ))
+    if piling_up_tasks == "sedang":
+        recommendations.append(RecommendationResponse(
+            subject=ReportRecommendationSubjectEnum.PILING_UP_TASKS.value,
+            color_label=ReportRecommendationColorLabelEnum.WARNING.value,
+            messages=[
+                "Kamu memiliki beberapa tugas yang mulai menumpuk.",
+                "Segera selesaikan satu per satu agar waktu istirahatmu tetap terjaga."
+            ]
+        ))
+    if sleep_quality == "sedang":
+        recommendations.append(RecommendationResponse(
+            subject=ReportRecommendationSubjectEnum.SLEEP_QUALITY.value,
+            color_label=ReportRecommendationColorLabelEnum.WARNING.value,
+            messages=[
+                "Kualitas tidurmu dalam 3 hari terakhir masih bisa ditingkatkan.",
+                "Cobalah untuk tidak mengkonsumsi kafein dan menggunakan gadget terlalu dekat dengan waktu tidur!"
+            ]
+        ))
+
+    if deadline_is_tomorrow_tasks == "rendah" and piling_up_tasks == "rendah" and sleep_quality == "rendah":
+        recommendations.append(RecommendationResponse(
+            subject=ReportRecommendationSubjectEnum.OTHER.value,
+            color_label=ReportRecommendationColorLabelEnum.SUCCESS.value,
+            messages=[
+                "Tugas dan kualitas tidurmu sudah terkelola dengan baik.",
+                "Terus pertahankan untuk menjaga kesehatan mental dan fisik!"
+            ]
+        ))
+
+    return recommendations
+
 def get_stress_report_service(db: Session, user_id: uuid.UUID) -> dict:
     all_stress_analysis = get_all_stress_analysis_service(db, user_id)
     potential_stress_factors = get_potential_stress_factors_service(db, user_id)
+    recommendations = get_recommendations_service(db, user_id, potential_stress_factors)
     
     return {
         "all_stress_analysis": all_stress_analysis,
-        "potential_stress_factors": potential_stress_factors
+        "potential_stress_factors": potential_stress_factors,
+        "recommendations": recommendations
     }
