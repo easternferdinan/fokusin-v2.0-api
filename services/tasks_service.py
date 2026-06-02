@@ -76,12 +76,14 @@ def get_deadline_is_tomorrow_tasks_service(db: Session, user_id: uuid.UUID, coun
         if count_only:
             return db.query(Task).filter(
                 Task.user_id == user_id,
-                Task.deadline == datetime.now(UTC).date() + timedelta(days=1)
+                Task.deadline == datetime.now(UTC).date() + timedelta(days=1),
+                Task.completed == False
             ).count()
 
         return db.query(Task).filter(
             Task.user_id == user_id,
-            Task.deadline == datetime.now(UTC).date() + timedelta(days=1)
+            Task.deadline == datetime.now(UTC).date() + timedelta(days=1),
+            Task.completed == False
         ).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve deadline is tomorrow tasks") from e
