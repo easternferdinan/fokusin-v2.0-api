@@ -4,13 +4,12 @@ from typing import List
 
 from api.deps import get_db, get_current_user
 from models.member import Member
-from schemas.stress_analysis import StressAnalysisCreateRequest, StressAnalysisResponse, StressAnalysisRequirementsStatusResponse, StressTrendResponse
+from schemas.stress_analysis import StressAnalysisCreateRequest, StressAnalysisResponse, StressAnalysisRequirementsStatusResponse
 from services.stress_analysis_service import (
     get_latest_stress_analysis_service,
     check_stress_analysis_requirements_service,
     create_stress_analysis_service,
     get_all_stress_analysis_service,
-    get_stress_trend_service,
 )
 
 router = APIRouter()
@@ -61,19 +60,3 @@ def create_stress_analysis(
     Perform a new stress analysis for the current user.
     """
     return create_stress_analysis_service(db, analysis_in, current_user)
-
-@router.get("/stress-trend", response_model=StressTrendResponse)
-def get_stress_trend(
-    period: str, # 'harian', 'mingguan', 'bulanan'
-    db: Session = Depends(get_db),
-    current_user: Member = Depends(get_current_user)
-):
-    """
-    Retrieve stress trend data for graphing.
-    """
-    if period not in ['harian', 'mingguan', 'bulanan']:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid period. Must be one of 'harian', 'mingguan', 'bulanan'."
-        )
-    return get_stress_trend_service(db, current_user.user_id, period)
