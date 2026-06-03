@@ -1,5 +1,6 @@
 import enum
 
 class MemberRole(str, enum.Enum):
+    SUPERADMIN = 'superadmin'
     ADMIN = 'admin'
-    USER = 'user'
+    MAHASISWA = 'mahasiswa'

@@ -14,7 +14,7 @@ class Member(Base):
     username = Column(String, unique=True, index=True, nullable=False)
     email = Column(String, unique=True, index=True, nullable=False)
     password = Column(String, nullable=False) # Hash
-    role = Column(SQLEnum(MemberRole), nullable=False, default=MemberRole.USER)
+    role = Column(SQLEnum(MemberRole), nullable=False)
     
     mental_health_history = Column(Boolean, nullable=False)
     academic_performance = Column(Integer, nullable=False)

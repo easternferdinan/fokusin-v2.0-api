@@ -1,3 +1,4 @@
+from enums.member_enums import MemberRole
 from pydantic import BaseModel, EmailStr, Field, UUID4
 from datetime import datetime
 
@@ -38,6 +39,7 @@ class UserAuthenticationSuccessResponse(UserBase):
     Response model for successful user authentication.
     Inherits from UserBase and adds authentication-specific fields.
     """
+    role: MemberRole
     authenticated: bool = True
     access_token: str
 

@@ -66,6 +66,7 @@ def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -
             mental_health_history=user.mental_health_history,
             academic_performance=user.academic_performance,
             social_support=user.social_support,
+            role=user.role,
             authenticated=True,
             access_token=access_token
         )
