@@ -6,10 +6,31 @@ from typing import List
 from api.deps import get_db, get_current_user
 from models.member import Member
 from enums.member_enums import MemberRole
-from schemas.admin import StressHistoryAdminResponse, UserAdminResponse
-from services.admin_service import get_mahasiswa_users_service, get_mahasiswa_stress_history_service
+from schemas.admin import MahasiswaCreateByAdminRequest, StressHistoryAdminResponse, UserAdminResponse
+from services.admin_service import create_mahasiswa_by_admin_service, get_mahasiswa_users_service, get_mahasiswa_stress_history_service
 
 router = APIRouter()
+
+@router.post("/mahasiswa", response_model=UserAdminResponse, status_code=status.HTTP_201_CREATED)
+def create_mahasiswa_by_admin(
+    member_in: MahasiswaCreateByAdminRequest,
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user)
+):
+    if current_user.role not in (MemberRole.ADMIN, MemberRole.SUPERADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang dapat mengakses data ini"
+        )
+
+    member = create_mahasiswa_by_admin_service(db, member_in)
+    if member is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username atau email sudah terdaftar"
+        )
+    return member
+
 
 @router.get("/mahasiswa", response_model=List[UserAdminResponse])
 def get_mahasiswa_users(

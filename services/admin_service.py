@@ -4,11 +4,13 @@ from typing import List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
+from pwdlib import PasswordHash
 
 from core.exceptions import DatabaseOperationError
 from enums.member_enums import MemberRole
 from models.member import Member
 from models.stress_analysis import StressAnalysis
+from schemas.admin import MahasiswaCreateByAdminRequest
 
 def get_mahasiswa_users_service(db: Session) -> List[Member]:
     try:
@@ -57,3 +59,35 @@ def get_mahasiswa_stress_history_service(
         return items, total
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Gagal mengambil riwayat stress analysis") from e
+
+
+def create_mahasiswa_by_admin_service(
+    db: Session, member_in: MahasiswaCreateByAdminRequest
+) -> Member | None:
+    try:
+        existing = db.query(Member).filter(
+            (Member.username == member_in.username) | (Member.email == member_in.email)
+        ).first()
+        if existing:
+            return None
+
+        hasher = PasswordHash.recommended()
+        hashed_password = hasher.hash(member_in.password)
+
+        db_member = Member(
+            fullname=member_in.fullname,
+            username=member_in.username,
+            email=member_in.email,
+            password=hashed_password,
+            mental_health_history=member_in.mental_health_history,
+            academic_performance=member_in.academic_performance,
+            social_support=member_in.social_support,
+            role=MemberRole.MAHASISWA,
+        )
+        db.add(db_member)
+        db.commit()
+        db.refresh(db_member)
+        return db_member
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise DatabaseOperationError("Gagal membuat mahasiswa baru") from e
