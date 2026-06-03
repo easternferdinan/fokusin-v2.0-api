@@ -1,12 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import UUID4
 from sqlalchemy.orm import Session
 from typing import List
 
 from api.deps import get_db, get_current_user
 from models.member import Member
 from enums.member_enums import MemberRole
-from schemas.admin import UserAdminResponse
-from services.admin_service import get_mahasiswa_users_service
+from schemas.admin import StressHistoryAdminResponse, UserAdminResponse
+from services.admin_service import get_mahasiswa_users_service, get_mahasiswa_stress_history_service
 
 router = APIRouter()
 
@@ -22,3 +23,23 @@ def get_mahasiswa_users(
         )
 
     return get_mahasiswa_users_service(db)
+
+
+@router.get("/stress-analysis/{user_id}", response_model=StressHistoryAdminResponse)
+def get_mahasiswa_stress_history(
+    user_id: UUID4,
+    page: int = Query(1, ge=1),
+    size: int = Query(10, ge=1, le=100),
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user)
+):
+    if current_user.role not in (MemberRole.ADMIN, MemberRole.SUPERADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang dapat mengakses data ini"
+        )
+
+    skip = (page - 1) * size
+    items, total = get_mahasiswa_stress_history_service(db, user_id, skip, size)
+
+    return StressHistoryAdminResponse(items=items, total=total, page=page, size=size)

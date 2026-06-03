@@ -1,7 +1,9 @@
+import uuid
+from typing import List, Tuple
+
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select
-from typing import List
 
 from core.exceptions import DatabaseOperationError
 from enums.member_enums import MemberRole
@@ -40,3 +42,18 @@ def get_mahasiswa_users_service(db: Session) -> List[Member]:
         return members
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Gagal mengambil data mahasiswa") from e
+
+
+def get_mahasiswa_stress_history_service(
+    db: Session, user_id: uuid.UUID, skip: int, limit: int
+) -> Tuple[List[StressAnalysis], int]:
+    try:
+        query = db.query(StressAnalysis).filter(StressAnalysis.user_id == user_id)
+
+        total = query.count()
+
+        items = query.order_by(StressAnalysis.created_at.desc()).offset(skip).limit(limit).all()
+
+        return items, total
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Gagal mengambil riwayat stress analysis") from e
