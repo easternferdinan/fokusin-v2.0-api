@@ -38,3 +38,38 @@ class StressHistoryAdminResponse(BaseModel):
     total: int
     page: int
     size: int
+
+
+class StressLevelPercentage(BaseModel):
+    tinggi: float
+    sedang: float
+    rendah: float
+
+
+class CorrelatedAcademicStressStats(BaseModel):
+    mode_academic_1_2: StressLevelEnum | None
+    mode_academic_3_5: StressLevelEnum | None
+
+
+class CorrelatedSocialStressStats(BaseModel):
+    mode_social_1: StressLevelEnum | None
+    mode_social_2: StressLevelEnum | None
+    mode_social_3: StressLevelEnum | None
+
+
+class DailyStressTrend(BaseModel):
+    date: str
+    label: str
+    mode_stress: StressLevelEnum | None
+
+
+class DailyStressTrendResponse(BaseModel):
+    items: list[DailyStressTrend]
+
+
+class AdminDashboardResponse(BaseModel):
+    total_mahasiswa: int
+    stress_level_percentages: StressLevelPercentage
+    correlated_academic_stress_stats: CorrelatedAcademicStressStats
+    correlated_social_stress_stats: CorrelatedSocialStressStats
+    mental_health_history_effect: str

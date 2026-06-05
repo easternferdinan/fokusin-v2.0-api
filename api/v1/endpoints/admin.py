@@ -6,8 +6,8 @@ from typing import List
 from api.deps import get_db, get_current_user
 from models.member import Member
 from enums.member_enums import MemberRole
-from schemas.admin import MahasiswaCreateByAdminRequest, StressHistoryAdminResponse, UserAdminResponse
-from services.admin_service import create_mahasiswa_by_admin_service, get_mahasiswa_users_service, get_mahasiswa_stress_history_service
+from schemas.admin import MahasiswaCreateByAdminRequest, StressHistoryAdminResponse, UserAdminResponse, AdminDashboardResponse, DailyStressTrendResponse
+from services.admin_service import create_mahasiswa_by_admin_service, get_mahasiswa_users_service, get_mahasiswa_stress_history_service, get_admin_dashboard_data_service, get_admin_daily_stress_trend_service
 
 router = APIRouter()
 
@@ -64,3 +64,35 @@ def get_mahasiswa_stress_history(
     items, total = get_mahasiswa_stress_history_service(db, user_id, skip, size)
 
     return StressHistoryAdminResponse(items=items, total=total, page=page, size=size)
+
+
+@router.get("/dashboard", response_model=AdminDashboardResponse)
+def get_admin_dashboard(
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user)
+):
+    if current_user.role not in (MemberRole.ADMIN, MemberRole.SUPERADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang dapat mengakses data ini"
+        )
+
+    return get_admin_dashboard_data_service(db)
+
+
+@router.get("/dashboard/stress-trend", response_model=DailyStressTrendResponse)
+def get_admin_dashboard_stress_trend(
+    period: str = Query("this_month", description="Select 'this_month' for the last 30 days, or 'last_month' for the 30 days prior."),
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user)
+):
+    if current_user.role not in (MemberRole.ADMIN, MemberRole.SUPERADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang dapat mengakses data ini"
+        )
+        
+    if period not in ["this_month", "last_month"]:
+        raise HTTPException(status_code=400, detail="Invalid period. Use 'this_month' or 'last_month'.")
+
+    return get_admin_daily_stress_trend_service(db, period)
