@@ -35,7 +35,7 @@ def create_admin_service(db: Session, admin_in: AdminCreateRequest) -> Member | 
         db_admin = Member(
             fullname=admin_in.fullname,
             username=admin_in.username,
-            email="admin@fokusin.com",
+            email=admin_in.username + "@fokusin.com",
             password=hashed_password,
             role=MemberRole.ADMIN,
             mental_health_history=False,
