@@ -3,11 +3,10 @@ from models.member import Member
 from models.task import Task
 from models.pomodoro_session import PomodoroSession
 from models.notification import Notification
-from models.report import Report
 from models.stress_analysis import StressAnalysis
 from models.log import Log
 from models.api_config import ApiConfig
 
 # This allows us to import all models from the models package
 # and ensures they are registered with Base.metadata
-__all__ = ["Base", "Member", "Task", "PomodoroSession", "Notification", "Report", "StressAnalysis", "Log", "ApiConfig"]
+__all__ = ["Base", "Member", "Task", "PomodoroSession", "Notification", "StressAnalysis", "Log", "ApiConfig"]

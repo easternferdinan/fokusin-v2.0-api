@@ -27,7 +27,6 @@ class Member(Base):
     pomodoro_sessions = relationship("PomodoroSession", back_populates="member", cascade="all, delete-orphan")
     tasks = relationship("Task", back_populates="member", cascade="all, delete-orphan")
     notifications = relationship("Notification", back_populates="member", cascade="all, delete-orphan")
-    reports = relationship("Report", back_populates="member", cascade="all, delete-orphan")
     stress_analyses = relationship("StressAnalysis", back_populates="member", cascade="all, delete-orphan")
     logs = relationship("Log", back_populates="member", cascade="all, delete-orphan")
 
