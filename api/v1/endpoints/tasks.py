@@ -4,7 +4,9 @@ from typing import List
 
 from api.deps import get_db, get_current_user
 from models.member import Member
+from enums.log_enums import LogEvent
 from schemas.task import TaskCreateRequest, TaskResponse, TaskUpdateRequest, TaskCompletionRequest
+from services.log_service import log_user_action
 from services.tasks_service import (
     get_tasks_service,
     get_task_service,
@@ -38,7 +40,9 @@ def create_task(task_in: TaskCreateRequest, db: Session = Depends(get_db), curre
     """
     Create a new task for the current user.
     """
-    return create_task_service(db, task_in, current_user.user_id)
+    task = create_task_service(db, task_in, current_user.user_id)
+    log_user_action(db, current_user, LogEvent.CREATE, f"Mahasiswa created task: {task_in.title}")
+    return task
 
 @router.put("/{task_id}", response_model=TaskResponse)
 def update_task(task_id: str, task_in: TaskUpdateRequest, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
@@ -48,6 +52,7 @@ def update_task(task_id: str, task_in: TaskUpdateRequest, db: Session = Depends(
     task = update_task_service(db, task_id, task_in, current_user.user_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    log_user_action(db, current_user, LogEvent.UPDATE, f"Mahasiswa updated task {task_id}")
     return task
 
 @router.delete("/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -58,6 +63,7 @@ def delete_task(task_id: str, db: Session = Depends(get_db), current_user: Membe
     success = delete_task_service(db, task_id, current_user.user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Task not found")
+    log_user_action(db, current_user, LogEvent.DELETE, f"Mahasiswa deleted task {task_id}")
     return None
 
 @router.patch("/{task_id}/complete", response_model=TaskResponse)
@@ -68,4 +74,5 @@ def complete_task(task_id: str, completion_in: TaskCompletionRequest, db: Sessio
     task = complete_task_service(db, task_id, completion_in, current_user.user_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+    log_user_action(db, current_user, LogEvent.UPDATE, f"Mahasiswa toggled task completion {task_id}")
     return task

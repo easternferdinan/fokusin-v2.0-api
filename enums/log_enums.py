@@ -8,6 +8,11 @@ class LogLevel(str, Enum):
     DEBUG = "DEBUG"
 
 class LogEvent(str, Enum):
+    # CRUD events
+    CREATE = "CREATE"
+    UPDATE = "UPDATE"
+    DELETE = "DELETE"
+
     # Auth events
     USER_LOGIN = "USER_LOGIN"
     USER_LOGOUT = "USER_LOGOUT"

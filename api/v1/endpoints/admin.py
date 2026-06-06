@@ -6,9 +6,11 @@ from typing import List
 from api.deps import get_db, get_current_user
 from models.member import Member
 from enums.member_enums import MemberRole
+from enums.log_enums import LogEvent
 from schemas.admin import MahasiswaCreateByAdminRequest, StressHistoryAdminResponse, UserAdminResponse, AdminDashboardResponse, DailyStressTrendResponse, MahasiswaStressAlertResponse, StressAlertCreateRequest
 from schemas.notification import NotificationResponse
 from services.admin_service import create_mahasiswa_by_admin_service, get_mahasiswa_users_service, get_mahasiswa_stress_history_service, get_admin_dashboard_data_service, get_admin_daily_stress_trend_service, get_mahasiswa_stress_alert_service, create_stress_alert_notification_service
+from services.log_service import log_user_action
 
 router = APIRouter()
 
@@ -30,6 +32,7 @@ def create_mahasiswa_by_admin(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Username atau email sudah terdaftar"
         )
+    log_user_action(db, current_user, LogEvent.CREATE, f"Admin created mahasiswa: {member.username}")
     return member
 
 
@@ -125,4 +128,6 @@ def create_stress_alert_notification(
             detail="Hanya admin yang dapat mengakses data ini"
         )
 
-    return create_stress_alert_notification_service(db, request)
+    notification = create_stress_alert_notification_service(db, request)
+    log_user_action(db, current_user, LogEvent.CREATE, f"Admin created stress alert for user {request.user_id}")
+    return notification

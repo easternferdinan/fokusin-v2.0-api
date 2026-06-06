@@ -15,6 +15,7 @@ class LogCreateRequest(LogBase):
 class LogResponse(LogBase):
     log_id: UUID4
     user_id: Optional[UUID4]
+    username: Optional[str] = None
     created_at: datetime
 
     class Config:

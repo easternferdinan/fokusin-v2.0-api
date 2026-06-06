@@ -4,12 +4,14 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.deps import get_db
+from enums.log_enums import LogEvent
 from schemas.member import UserCreateRequest, UserResponse, UserAuthenticationRequest, UserAuthenticationSuccessResponse, UserAuthenticationFailedResponse, UserUpdateRequest
 from services.auth_service import (
     register_user_service,
     authenticate_user_service,
     update_user_service
 )
+from services.log_service import log_user_action
 
 router = APIRouter()
 
@@ -27,6 +29,7 @@ def register(user_in: UserCreateRequest, db: Session = Depends(get_db)):
             detail="Username atau email sudah terdaftar"
         )
 
+    log_user_action(db, user, LogEvent.CREATE, f"User registered: {user.username}")
     return user
 
 @router.post("/login", response_model=UserAuthenticationSuccessResponse)
@@ -54,4 +57,5 @@ def update(user_in: UserUpdateRequest, db: Session = Depends(get_db), user: Memb
             detail="User tidak ditemukan"
         )
     
+    log_user_action(db, user, LogEvent.UPDATE, f"User updated profile: {user.username}")
     return user

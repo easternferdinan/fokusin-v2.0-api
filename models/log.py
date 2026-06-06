@@ -23,5 +23,9 @@ class Log(Base):
     # Relationships
     member = relationship("Member", back_populates="logs")
 
+    @property
+    def username(self):
+        return self.member.username if self.member else None
+
     def __repr__(self):
         return f"<Log(event_type='{self.event_type}', level='{self.level}', created_at='{self.created_at}')>"

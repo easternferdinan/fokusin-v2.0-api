@@ -7,8 +7,10 @@ from typing import List
 from api.deps import get_db, get_current_user
 from models.member import Member
 from enums.member_enums import MemberRole
+from enums.log_enums import LogEvent
 from schemas.api_config import ApiConfigResponse, ApiConfigUpdateRequest
 from schemas.super_admin import AdminCreateRequest, AdminResponse, AdminUpdateRequest
+from services.log_service import log_user_action
 from services.super_admin_service import (
     get_api_config_service,
     update_api_config_service,
@@ -44,6 +46,7 @@ def update_api_config(
     if current_user.role != MemberRole.SUPERADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Hanya super admin yang dapat mengakses data ini")
     config = update_api_config_service(db, config_in)
+    log_user_action(db, current_user, LogEvent.UPDATE, "Superadmin updated api config")
     return config
 
 
@@ -68,6 +71,7 @@ def create_admin(
     admin = create_admin_service(db, admin_in)
     if admin is None:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username atau email sudah terdaftar")
+    log_user_action(db, current_user, LogEvent.CREATE, f"Superadmin created admin: {admin.username}")
     return admin
 
 
@@ -83,6 +87,7 @@ def update_admin(
     admin = update_admin_service(db, admin_id, admin_in)
     if admin is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin tidak ditemukan")
+    log_user_action(db, current_user, LogEvent.UPDATE, f"Superadmin updated admin {admin_id}")
     return admin
 
 
@@ -97,6 +102,7 @@ def delete_admin(
     success = delete_admin_service(db, admin_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin tidak ditemukan")
+    log_user_action(db, current_user, LogEvent.DELETE, f"Superadmin deleted admin {admin_id}")
     return None
 
 

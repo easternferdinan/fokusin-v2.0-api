@@ -4,7 +4,9 @@ from typing import List
 
 from api.deps import get_db, get_current_user
 from models.member import Member
+from enums.log_enums import LogEvent
 from schemas.stress_analysis import StressAnalysisCreateRequest, StressAnalysisResponse, StressAnalysisRequirementsStatusResponse
+from services.log_service import log_user_action
 from services.stress_analysis_service import (
     get_latest_stress_analysis_service,
     check_stress_analysis_requirements_service,
@@ -59,4 +61,6 @@ def create_stress_analysis(
     """
     Perform a new stress analysis for the current user.
     """
-    return create_stress_analysis_service(db, analysis_in, current_user)
+    analysis = create_stress_analysis_service(db, analysis_in, current_user)
+    log_user_action(db, current_user, LogEvent.CREATE, "Mahasiswa completed stress analysis")
+    return analysis

@@ -1,10 +1,11 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
 import uuid
 
 from core.exceptions import DatabaseOperationError
 from models.log import Log
+from models.member import Member
 from schemas.log import LogCreateRequest
 from enums.log_enums import LogLevel
 
@@ -34,7 +35,7 @@ def get_logs_service(
     Retrieve logs with optional filtering.
     """
     try:
-        query = db.query(Log)
+        query = db.query(Log).options(joinedload(Log.member))
         
         if user_id:
             query = query.filter(Log.user_id == user_id)
@@ -52,3 +53,17 @@ def get_user_logs_service(db: Session, user_id: uuid.UUID, limit: int = 50) -> L
     Retrieve logs for a specific user.
     """
     return get_logs_service(db, user_id=user_id, limit=limit)
+
+
+def log_user_action(db: Session, user: Member, event_type: str, message: str, extra_data: dict | None = None) -> Log:
+    """
+    Convenience helper to create a log entry for an authenticated user action.
+    """
+    log_in = LogCreateRequest(
+        user_id=user.user_id,
+        level=LogLevel.INFO,
+        event_type=event_type,
+        message=message,
+        extra_data=extra_data,
+    )
+    return create_log_service(db, log_in)

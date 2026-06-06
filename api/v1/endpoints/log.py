@@ -44,7 +44,7 @@ def get_logs(
     Retrieve logs. Non-admin users can only see their own logs.
     Admins can see all logs.
     """
-    if current_user.role == MemberRole.ADMIN:
+    if current_user.role == MemberRole.SUPERADMIN:
         return get_logs_service(db, level=level, event_type=event_type, limit=limit, skip=skip)
     else:
         return get_user_logs_service(db, user_id=current_user.user_id, limit=limit)

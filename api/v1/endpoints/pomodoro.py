@@ -4,7 +4,9 @@ from typing import List
 
 from api.deps import get_db, get_current_user
 from models.member import Member
+from enums.log_enums import LogEvent
 from schemas.pomodoro import PomodoroCreateRequest, PomodoroResponse, PomodoroUpdateRequest
+from services.log_service import log_user_action
 from services.pomodoro_service import (
     get_pomodoros_service,
     get_pomodoro_service,
@@ -30,7 +32,9 @@ def create_pomodoro(pomodoro_in: PomodoroCreateRequest, db: Session = Depends(ge
     """
     Log a new pomodoro session for the current user.
     """
-    return create_pomodoro_service(db, pomodoro_in, current_user.user_id)
+    pomodoro = create_pomodoro_service(db, pomodoro_in, current_user.user_id)
+    log_user_action(db, current_user, LogEvent.CREATE, "Mahasiswa created pomodoro session")
+    return pomodoro
 
 @router.get("/{pomodoro_id}", response_model=PomodoroResponse)
 def get_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
@@ -50,6 +54,7 @@ def update_pomodoro(pomodoro_id: str, pomodoro_in: PomodoroUpdateRequest, db: Se
     pomodoro = update_pomodoro_service(db, pomodoro_id, pomodoro_in, current_user.user_id)
     if not pomodoro:
         raise HTTPException(status_code=404, detail="Pomodoro session not found")
+    log_user_action(db, current_user, LogEvent.UPDATE, f"Mahasiswa updated pomodoro {pomodoro_id}")
     return pomodoro
 
 @router.patch("/{pomodoro_id}/resume", response_model=PomodoroResponse)
@@ -60,7 +65,9 @@ def resume_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_use
     pomodoro = get_pomodoro_service(db, pomodoro_id, current_user.user_id)
     if not pomodoro:
         raise HTTPException(status_code=404, detail="Pomodoro session not found")
-    return resume_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    pomodoro = resume_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    log_user_action(db, current_user, LogEvent.UPDATE, f"Mahasiswa resumed pomodoro {pomodoro_id}")
+    return pomodoro
 
 @router.patch("/{pomodoro_id}/pause", response_model=PomodoroResponse)
 def pause_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
@@ -70,7 +77,9 @@ def pause_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user
     pomodoro = get_pomodoro_service(db, pomodoro_id, current_user.user_id)
     if not pomodoro:
         raise HTTPException(status_code=404, detail="Pomodoro session not found")
-    return pause_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    pomodoro = pause_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    log_user_action(db, current_user, LogEvent.UPDATE, f"Mahasiswa paused pomodoro {pomodoro_id}")
+    return pomodoro
 
 @router.patch("/{pomodoro_id}/complete", response_model=PomodoroResponse)
 def complete_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
@@ -80,7 +89,9 @@ def complete_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_u
     pomodoro = get_pomodoro_service(db, pomodoro_id, current_user.user_id)
     if not pomodoro:
         raise HTTPException(status_code=404, detail="Pomodoro session not found")
-    return complete_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    pomodoro = complete_pomodoro_service(db, pomodoro_id, current_user.user_id)
+    log_user_action(db, current_user, LogEvent.UPDATE, f"Mahasiswa completed pomodoro {pomodoro_id}")
+    return pomodoro
 
 @router.delete("/{pomodoro_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_user: Member = Depends(get_current_user)):
@@ -90,4 +101,5 @@ def delete_pomodoro(pomodoro_id: str, db: Session = Depends(get_db), current_use
     success = delete_pomodoro_service(db, pomodoro_id, current_user.user_id)
     if not success:
         raise HTTPException(status_code=404, detail="Pomodoro session not found")
+    log_user_action(db, current_user, LogEvent.DELETE, f"Mahasiswa deleted pomodoro {pomodoro_id}")
     return None
