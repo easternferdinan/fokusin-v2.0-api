@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from pydantic import UUID4
 from sqlalchemy.orm import Session
 from typing import List
@@ -15,6 +16,7 @@ from services.super_admin_service import (
     create_admin_service,
     update_admin_service,
     delete_admin_service,
+    export_db_to_csv_service,
 )
 
 router = APIRouter()
@@ -96,3 +98,18 @@ def delete_admin(
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin tidak ditemukan")
     return None
+
+
+@router.get("/export-db")
+def export_database(
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user),
+):
+    if current_user.role != MemberRole.SUPERADMIN:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Hanya super admin yang dapat mengakses data ini")
+    csv_zip = export_db_to_csv_service(db)
+    return StreamingResponse(
+        iter([csv_zip]),
+        media_type="application/zip",
+        headers={"Content-Disposition": "attachment; filename=fokusin_export.zip"},
+    )

@@ -1,4 +1,7 @@
+import csv
 import uuid
+from io import StringIO, BytesIO
+from zipfile import ZipFile
 from typing import List
 
 from pydantic import UUID4
@@ -9,6 +12,11 @@ from sqlalchemy.exc import SQLAlchemyError
 from core.exceptions import DatabaseOperationError
 from enums.member_enums import MemberRole
 from models.member import Member
+from models.task import Task
+from models.pomodoro_session import PomodoroSession
+from models.notification import Notification
+from models.stress_analysis import StressAnalysis
+from models.log import Log
 from models.api_config import ApiConfig
 from schemas.super_admin import AdminCreateRequest, AdminUpdateRequest
 from schemas.api_config import ApiConfigUpdateRequest
@@ -118,3 +126,42 @@ def update_api_config_service(db: Session, config_in: ApiConfigUpdateRequest) ->
     except SQLAlchemyError as e:
         db.rollback()
         raise DatabaseOperationError("Gagal memperbarui konfigurasi API") from e
+
+
+def export_db_to_csv_service(db: Session) -> bytes:
+    try:
+        tables = {
+            "members": db.query(Member).all(),
+            "tasks": db.query(Task).all(),
+            "pomodoro_sessions": db.query(PomodoroSession).all(),
+            "notifications": db.query(Notification).all(),
+            "stress_analysis": db.query(StressAnalysis).all(),
+            "logs": db.query(Log).all(),
+            "api_config": db.query(ApiConfig).all(),
+        }
+
+        zip_buffer = BytesIO()
+        with ZipFile(zip_buffer, "w") as zf:
+            for table_name, rows in tables.items():
+                columns = [
+                    c.name for c in rows[0].__table__.columns
+                    if not (table_name == "members" and c.name == "password")
+                ] if rows else []
+
+                if not columns:
+                    continue
+
+                output = StringIO()
+                writer = csv.writer(output)
+                writer.writerow(columns)
+
+                for row in rows:
+                    writer.writerow([
+                        str(getattr(row, c, "")) for c in columns
+                    ])
+
+                zf.writestr(f"{table_name}.csv", output.getvalue())
+
+        return zip_buffer.getvalue()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Gagal mengekspor database") from e
