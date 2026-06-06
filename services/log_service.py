@@ -1,3 +1,5 @@
+from sqlalchemy.sql.compiler import ilike_case_insensitive
+from sqlalchemy.sql.operators import like_op
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy.exc import SQLAlchemyError
 from typing import List, Optional
@@ -42,7 +44,7 @@ def get_logs_service(
         if level:
             query = query.filter(Log.level == level)
         if event_type:
-            query = query.filter(Log.event_type == event_type)
+            query = query.filter(Log.event_type.ilike("%" + event_type + "%"))
             
         return query.order_by(Log.created_at.desc()).offset(skip).limit(limit).all()
     except SQLAlchemyError as e:

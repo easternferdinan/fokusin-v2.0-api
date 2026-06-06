@@ -33,8 +33,8 @@ def create_log(
 
 @router.get("/", response_model=List[LogResponse])
 def get_logs(
-    level: Optional[LogLevel] = None,
-    event_type: Optional[str] = None,
+    level: Optional[LogLevel] = Query(None),
+    event_type: Optional[str] = Query(None),
     limit: int = Query(100, ge=1, le=500),
     skip: int = Query(0, ge=0),
     db: Session = Depends(get_db),
