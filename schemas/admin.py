@@ -67,6 +67,36 @@ class DailyStressTrendResponse(BaseModel):
     items: list[DailyStressTrend]
 
 
+class StressAlertCreateRequest(BaseModel):
+    user_id: UUID4
+    stress_threshold: StressLevelEnum
+    stress_threshold_frequency: int
+
+
+class MahasiswaStressAlertItem(BaseModel):
+    user_id: UUID4
+    fullname: str
+    username: str
+    email: str
+    role: MemberRole
+    latest_stress_level: StressLevelEnum | None = None
+    consecutive_stress_days: int
+    mental_health_history: bool
+    academic_performance: int
+    social_support: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MahasiswaStressAlertResponse(BaseModel):
+    alerted_mahasiswa: List[MahasiswaStressAlertItem]
+    stress_threshold: StressLevelEnum
+    stress_threshold_frequency: int
+
+
 class AdminDashboardResponse(BaseModel):
     total_mahasiswa: int
     stress_level_percentages: StressLevelPercentage

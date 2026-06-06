@@ -6,8 +6,9 @@ from typing import List
 from api.deps import get_db, get_current_user
 from models.member import Member
 from enums.member_enums import MemberRole
-from schemas.admin import MahasiswaCreateByAdminRequest, StressHistoryAdminResponse, UserAdminResponse, AdminDashboardResponse, DailyStressTrendResponse
-from services.admin_service import create_mahasiswa_by_admin_service, get_mahasiswa_users_service, get_mahasiswa_stress_history_service, get_admin_dashboard_data_service, get_admin_daily_stress_trend_service
+from schemas.admin import MahasiswaCreateByAdminRequest, StressHistoryAdminResponse, UserAdminResponse, AdminDashboardResponse, DailyStressTrendResponse, MahasiswaStressAlertResponse, StressAlertCreateRequest
+from schemas.notification import NotificationResponse
+from services.admin_service import create_mahasiswa_by_admin_service, get_mahasiswa_users_service, get_mahasiswa_stress_history_service, get_admin_dashboard_data_service, get_admin_daily_stress_trend_service, get_mahasiswa_stress_alert_service, create_stress_alert_notification_service
 
 router = APIRouter()
 
@@ -96,3 +97,32 @@ def get_admin_dashboard_stress_trend(
         raise HTTPException(status_code=400, detail="Invalid period. Use 'this_month' or 'last_month'.")
 
     return get_admin_daily_stress_trend_service(db, period)
+
+
+@router.get("/stress-alert", response_model=MahasiswaStressAlertResponse)
+def get_mahasiswa_stress_alert(
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user),
+):
+    if current_user.role not in (MemberRole.ADMIN, MemberRole.SUPERADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang dapat mengakses data ini"
+        )
+
+    return get_mahasiswa_stress_alert_service(db)
+
+
+@router.post("/stress-alert", response_model=NotificationResponse, status_code=status.HTTP_201_CREATED)
+def create_stress_alert_notification(
+    request: StressAlertCreateRequest,
+    db: Session = Depends(get_db),
+    current_user: Member = Depends(get_current_user),
+):
+    if current_user.role not in (MemberRole.ADMIN, MemberRole.SUPERADMIN):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Hanya admin yang dapat mengakses data ini"
+        )
+
+    return create_stress_alert_notification_service(db, request)

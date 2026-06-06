@@ -12,6 +12,8 @@ from core.exceptions import DatabaseOperationError
 from enums.member_enums import MemberRole
 from models.member import Member
 from models.stress_analysis import StressAnalysis
+from models.api_config import ApiConfig
+from models.notification import Notification
 from schemas.admin import (
     MahasiswaCreateByAdminRequest, 
     AdminDashboardResponse, 
@@ -19,7 +21,9 @@ from schemas.admin import (
     CorrelatedAcademicStressStats, 
     CorrelatedSocialStressStats, 
     DailyStressTrend,
-    DailyStressTrendResponse
+    DailyStressTrendResponse,
+    MahasiswaStressAlertResponse,
+    StressAlertCreateRequest,
 )
 from enums.stress_level import StressLevelEnum
 
@@ -268,3 +272,102 @@ def get_admin_daily_stress_trend_service(db: Session, period: str) -> DailyStres
 
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Gagal mengambil data trend stress dashboard") from e
+
+
+def get_mahasiswa_stress_alert_service(db: Session) -> MahasiswaStressAlertResponse:
+    try:
+        config = db.query(ApiConfig).first()
+        if not config:
+            raise DatabaseOperationError("Konfigurasi API tidak ditemukan")
+
+        threshold_rank = {
+            StressLevelEnum.RENDAH: 0,
+            StressLevelEnum.SEDANG: 1,
+            StressLevelEnum.TINGGI: 2,
+        }
+        threshold_val = threshold_rank[config.stress_threshold]
+        frequency = config.stress_threshold_frequency
+
+        mahasiswa_list = db.query(Member).filter(
+            Member.role == MemberRole.MAHASISWA
+        ).all()
+
+        if not mahasiswa_list:
+            return MahasiswaStressAlertResponse(
+                alerted_mahasiswa=[],
+                stress_threshold=config.stress_threshold,
+                stress_threshold_frequency=config.stress_threshold_frequency,
+            )
+
+        mahasiswa_ids = [m.user_id for m in mahasiswa_list]
+
+        analyses = db.query(StressAnalysis).filter(
+            StressAnalysis.user_id.in_(mahasiswa_ids)
+        ).order_by(StressAnalysis.user_id, StressAnalysis.created_at.desc()).all()
+
+        from collections import defaultdict
+        user_analyses = defaultdict(list)
+        for a in analyses:
+            user_analyses[a.user_id].append(a)
+
+        results = []
+        for member in mahasiswa_list:
+            member_analyses = user_analyses.get(member.user_id, [])
+            if not member_analyses:
+                continue
+
+            daily_max_level = {}
+            for a in member_analyses:
+                date = a.created_at.date()
+                level_rank = threshold_rank[a.stress_level]
+                if date not in daily_max_level or level_rank > threshold_rank[daily_max_level[date]]:
+                    daily_max_level[date] = a.stress_level
+
+            sorted_dates = sorted(daily_max_level.keys())
+
+            max_streak = 0
+            current_streak = 0
+            for date in sorted_dates:
+                level_rank = threshold_rank[daily_max_level[date]]
+                if level_rank >= threshold_val:
+                    current_streak += 1
+                    max_streak = max(max_streak, current_streak)
+                else:
+                    current_streak = 0
+
+            if max_streak >= frequency:
+                member.latest_stress_level = daily_max_level.get(sorted_dates[-1])
+                member.consecutive_stress_days = max_streak
+                results.append(member)
+
+        return MahasiswaStressAlertResponse(
+            alerted_mahasiswa=results,
+            stress_threshold=config.stress_threshold,
+            stress_threshold_frequency=config.stress_threshold_frequency,
+        )
+
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Gagal mengambil data stress alert") from e
+
+
+def create_stress_alert_notification_service(
+    db: Session, request: StressAlertCreateRequest
+) -> Notification:
+    try:
+        message = (
+            f"Tingkat stress anda berada di level {request.stress_threshold.value} "
+            f"selama {request.stress_threshold_frequency} hari berturut-turut. "
+            "Atur beban tugas dan jangan lupa istirahat ya!"
+        )
+        db_notification = Notification(
+            user_id=request.user_id,
+            message=message,
+            is_read=False,
+        )
+        db.add(db_notification)
+        db.commit()
+        db.refresh(db_notification)
+        return db_notification
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise DatabaseOperationError("Gagal membuat notifikasi stress alert") from e
