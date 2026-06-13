@@ -33,7 +33,7 @@ def register_user_service(db: Session, user_in: UserCreateRequest) -> Member:
             mental_health_history=user_in.mental_health_history,
             academic_performance=user_in.academic_performance,
             social_support=user_in.social_support,
-            role=MemberRole.USER
+            role=MemberRole.MAHASISWA
         )
         
         db.add(db_user)
