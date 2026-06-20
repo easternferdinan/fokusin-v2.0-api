@@ -206,7 +206,7 @@ def get_recommendations_service(db: Session, user_id: uuid.UUID, potential_stres
             ]
         ))
 
-    if deadline_is_tomorrow_tasks == "rendah" and piling_up_tasks == "rendah" and sleep_quality == "rendah":
+    if deadline_is_tomorrow_tasks == "rendah" and piling_up_tasks == "rendah" and sleep_quality == "baik":
         recommendations.append(RecommendationResponse(
             subject=ReportRecommendationSubjectEnum.OTHER.value,
             color_label=ReportRecommendationColorLabelEnum.SUCCESS.value,
