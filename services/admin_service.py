@@ -310,11 +310,29 @@ def get_mahasiswa_stress_alert_service(db: Session) -> MahasiswaStressAlertRespo
         for a in analyses:
             user_analyses[a.user_id].append(a)
 
+        last_alert = db.query(
+            Notification.user_id,
+            func.max(Notification.created_at).label('last_alert_at')
+        ).filter(
+            Notification.user_id.in_(mahasiswa_ids),
+            # TODO: Replace string-matching on message prefix with a dedicated
+            # notification_type field (e.g. 'stress_alert') in a future improvement
+            Notification.message.like('Tingkat stress anda berada di level%'),
+        ).group_by(Notification.user_id).all()
+
+        last_alert_map = {n.user_id: n.last_alert_at for n in last_alert}
+
         results = []
         for member in mahasiswa_list:
             member_analyses = user_analyses.get(member.user_id, [])
             if not member_analyses:
                 continue
+
+            last_alert_at = last_alert_map.get(member.user_id)
+            if last_alert_at:
+                member_analyses = [a for a in member_analyses if a.created_at > last_alert_at]
+                if not member_analyses:
+                    continue
 
             daily_max_level = {}
             for a in member_analyses:

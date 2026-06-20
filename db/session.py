@@ -3,6 +3,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from core.config import settings
 
+# TODO: Change the way db is connected according to supabase documentation
 engine = create_engine(
     settings.database_url
 )
