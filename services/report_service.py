@@ -222,7 +222,10 @@ def get_potential_stress_factors_service(db: Session, user_id: uuid.UUID) -> Pot
         else:
             sleep_quality_counts[sleep_quality] = 1
     
-    sleep_quality_mode = max(sleep_quality_counts, key=sleep_quality_counts.get)
+    if not sleep_quality_list:
+        sleep_quality_mode = 3
+    else:
+        sleep_quality_mode = max(sleep_quality_counts, key=sleep_quality_counts.get)
 
     return PotentialStressFactorsResponse(
         deadline_is_tomorrow_tasks=three_level_categorize(deadline_is_tomorrow_tasks, 0, 2),
