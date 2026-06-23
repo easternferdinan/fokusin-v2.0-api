@@ -58,12 +58,14 @@ def get_high_priority_tasks_service(db: Session, user_id: uuid.UUID, count_only:
         if count_only:
             return db.query(Task).filter(
                 Task.user_id == user_id,
-                Task.priority == TaskPriority.TINGGI
+                Task.priority == TaskPriority.TINGGI,
+                Task.completed == False
             ).count()
 
         return db.query(Task).filter(
             Task.user_id == user_id,
-            Task.priority == TaskPriority.TINGGI
+            Task.priority == TaskPriority.TINGGI,
+            Task.completed == False
         ).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve high priority tasks") from e
