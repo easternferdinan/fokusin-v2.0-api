@@ -1,4 +1,4 @@
-from sqlalchemy import Date
+from sqlalchemy import Date, case
 from enums.task_enums import TaskPriority
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
@@ -87,6 +87,35 @@ def get_deadline_is_tomorrow_tasks_service(db: Session, user_id: uuid.UUID, coun
         ).all()
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to retrieve deadline is tomorrow tasks") from e
+
+def get_deadline_urgent_tasks_service(db: Session, user_id: uuid.UUID, count_only: bool = False) -> List[Task] | int:
+    """
+    Retrieve or count all urgent tasks for a specific user.
+    Urgent = deadline is overdue, today, or tomorrow AND not completed.
+    Sorted by deadline ascending (overdue first), then priority descending (Tinggi first).
+    """
+    try:
+        priority_order = case(
+            (Task.priority == TaskPriority.TINGGI, 0),
+            (Task.priority == TaskPriority.SEDANG, 1),
+            (Task.priority == TaskPriority.RENDAH, 2),
+            else_=3
+        )
+
+        tomorrow = datetime.now(UTC).date() + timedelta(days=1)
+
+        query = db.query(Task).filter(
+            Task.user_id == user_id,
+            Task.deadline <= tomorrow,
+            Task.completed == False
+        )
+
+        if count_only:
+            return query.count()
+
+        return query.order_by(Task.deadline.asc(), priority_order).all()
+    except SQLAlchemyError as e:
+        raise DatabaseOperationError("Failed to retrieve urgent tasks") from e
 
 def get_task_service(db: Session, task_id: str, user_id: uuid.UUID) -> Task | None:
     """
