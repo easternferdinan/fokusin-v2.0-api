@@ -26,7 +26,7 @@ async def database_operation_error_handler(request: Request, exc: DatabaseOperat
     if exc.__cause__:
         log_database_operation_error(exc.__cause__)
     else:
-        log_database_operation_error()
+        log_database_operation_error("Unknown cause")
     return JSONResponse(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={
