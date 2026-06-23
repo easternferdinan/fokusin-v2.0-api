@@ -11,6 +11,95 @@ from enums.stress_level import StressLevelEnum
 from utils.categorize import three_level_categorize
 from services.tasks_service import get_incomplete_tasks_service, get_deadline_is_tomorrow_tasks_service
 from services.stress_analysis_service import get_sleep_quality_service, get_all_stress_analysis_service
+from collections.abc import Callable
+
+FactorLevelRecommendation = tuple[
+    ReportRecommendationSubjectEnum,
+    ReportRecommendationColorLabelEnum,
+    list[str],
+]
+
+FACTOR_LEVEL_RECOMMENDATIONS: dict[str, dict[str, FactorLevelRecommendation]] = {
+    "deadline_is_tomorrow_tasks": {
+        "tinggi": (
+            ReportRecommendationSubjectEnum.DEADLINE_IS_TOMORROW_TASKS,
+            ReportRecommendationColorLabelEnum.DANGER,
+            [
+                "Kamu memiliki banyak tugas dengan tenggat waktu penyelesaian besok.",
+                "Prioritaskan mengerjakan tugas-tugas tersebut agar tidak terlambat.",
+            ],
+        ),
+        "sedang": (
+            ReportRecommendationSubjectEnum.DEADLINE_IS_TOMORROW_TASKS,
+            ReportRecommendationColorLabelEnum.WARNING,
+            [
+                "Kamu memiliki beberapa tugas dengan tenggat waktu penyelesaian besok.",
+                "Kerjakan tugas-tugas tersebut agar tidak terlambat.",
+            ],
+        ),
+    },
+    "piling_up_tasks": {
+        "tinggi": (
+            ReportRecommendationSubjectEnum.PILING_UP_TASKS,
+            ReportRecommendationColorLabelEnum.DANGER,
+            [
+                "Tugasmu yang belum selesai sudah menumpuk.",
+                "Segera selesaikan tugas-tugas tersebut berdasarkan urgensi dan tingkat kepentingannya.",
+            ],
+        ),
+        "sedang": (
+            ReportRecommendationSubjectEnum.PILING_UP_TASKS,
+            ReportRecommendationColorLabelEnum.WARNING,
+            [
+                "Kamu memiliki beberapa tugas yang mulai menumpuk.",
+                "Segera selesaikan satu per satu agar waktu istirahatmu tetap terjaga.",
+            ],
+        ),
+    },
+    "sleep_quality": {
+        "buruk": (
+            ReportRecommendationSubjectEnum.SLEEP_QUALITY,
+            ReportRecommendationColorLabelEnum.DANGER,
+            [
+                "Kualitas tidurmu kurang baik akhir-akhir ini.",
+                "Usahakan tidur 7-8 jam setiap malam untuk menjaga kesehatan mental dan fisik!",
+            ],
+        ),
+        "sedang": (
+            ReportRecommendationSubjectEnum.SLEEP_QUALITY,
+            ReportRecommendationColorLabelEnum.WARNING,
+            [
+                "Kualitas tidurmu masih bisa ditingkatkan lagi.",
+                "Cobalah untuk tidak mengkonsumsi kafein dan menggunakan gadget terlalu dekat dengan waktu tidur!",
+            ],
+        ),
+    },
+}
+
+AllGoodCondition = Callable[[str, str, str], bool]
+
+ComboRecommendation = tuple[
+    AllGoodCondition,
+    ReportRecommendationSubjectEnum,
+    ReportRecommendationColorLabelEnum,
+    list[str],
+]
+
+COMBO_RECOMMENDATIONS: list[ComboRecommendation] = [
+    (
+        lambda deadline_level, piling_level, sleep_level: (
+            deadline_level == "rendah"
+            and piling_level == "rendah"
+            and sleep_level == "baik"
+        ),
+        ReportRecommendationSubjectEnum.OTHER,
+        ReportRecommendationColorLabelEnum.SUCCESS,
+        [
+            "Tugas dan kualitas tidurmu sudah terkelola dengan baik.",
+            "Terus pertahankan untuk menjaga kesehatan mental dan fisik!",
+        ],
+    ),
+]
 
 def get_stress_trend_service(db: Session, user_id: uuid.UUID, period: str) -> StressTrendResponse:
     '''
@@ -141,79 +230,36 @@ def get_potential_stress_factors_service(db: Session, user_id: uuid.UUID) -> Pot
         sleep_quality=three_level_categorize(sleep_quality_mode, 1, 2, ["buruk", "sedang", "baik"])
     )
 
-# TODO: Refactor this abomination if possible. I hate it.
-# TODO: Add more "recommendations" based on other stress triggers. e.g. > 3 high priority tasks with < 3 days deadlines or > 5 medium priority tasks with < 3 days deadlines, etc.
 def get_recommendations_service(db: Session, user_id: uuid.UUID, potential_stress_factors: PotentialStressFactorsResponse) -> list[RecommendationResponse]:
     recommendations: list[RecommendationResponse] = []
 
-    deadline_is_tomorrow_tasks = potential_stress_factors.deadline_is_tomorrow_tasks
-    piling_up_tasks = potential_stress_factors.piling_up_tasks
-    sleep_quality = potential_stress_factors.sleep_quality
+    deadline_level = potential_stress_factors.deadline_is_tomorrow_tasks
+    piling_level = potential_stress_factors.piling_up_tasks
+    sleep_level = potential_stress_factors.sleep_quality
 
-    if deadline_is_tomorrow_tasks == "tinggi":
-        recommendations.append(RecommendationResponse(
-            subject=ReportRecommendationSubjectEnum.DEADLINE_IS_TOMORROW_TASKS.value,
-            color_label=ReportRecommendationColorLabelEnum.DANGER.value,
-            messages=[
-                "Kamu memiliki banyak tugas dengan tenggat waktu penyelesaian besok.",
-                "Prioritaskan mengerjakan tugas-tugas tersebut agar tidak terlambat."
-            ]
-        ))
-    if piling_up_tasks == "tinggi":
-        recommendations.append(RecommendationResponse(
-            subject=ReportRecommendationSubjectEnum.PILING_UP_TASKS.value,
-            color_label=ReportRecommendationColorLabelEnum.DANGER.value,
-            messages=[
-                "Tugasmu yang belum selesai sudah menumpuk.",
-                "Segera selesaikan tugas-tugas tersebut berdasarkan urgensi dan tingkat kepentingannya."
-            ]
-        ))
-    if sleep_quality == "buruk":
-        recommendations.append(RecommendationResponse(
-            subject=ReportRecommendationSubjectEnum.SLEEP_QUALITY.value,
-            color_label=ReportRecommendationColorLabelEnum.DANGER.value,
-            messages=[
-                "Kualitas tidurmu kurang baik dalam 3 hari terakhir.",
-                "Usahakan tidur 7-8 jam setiap malam untuk menjaga kesehatan mental dan fisik!"
-            ]
-        ))
+    for factor_key, level_config in FACTOR_LEVEL_RECOMMENDATIONS.items():
+        current_level = getattr(potential_stress_factors, factor_key)
+        if current_level in level_config:
+            subject, color_label, messages = level_config[current_level]
+            recommendations.append(RecommendationResponse(
+                subject=subject.value,
+                color_label=color_label.value,
+                messages=messages,
+            ))
 
-    if deadline_is_tomorrow_tasks == "sedang":
-        recommendations.append(RecommendationResponse(
-            subject=ReportRecommendationSubjectEnum.DEADLINE_IS_TOMORROW_TASKS.value,
-            color_label=ReportRecommendationColorLabelEnum.WARNING.value,
-            messages=[
-                "Kamu memiliki beberapa tugas dengan tenggat waktu penyelesaian besok.",
-                "Kerjakan tugas-tugas tersebut agar tidak terlambat."
-            ]
-        ))
-    if piling_up_tasks == "sedang":
-        recommendations.append(RecommendationResponse(
-            subject=ReportRecommendationSubjectEnum.PILING_UP_TASKS.value,
-            color_label=ReportRecommendationColorLabelEnum.WARNING.value,
-            messages=[
-                "Kamu memiliki beberapa tugas yang mulai menumpuk.",
-                "Segera selesaikan satu per satu agar waktu istirahatmu tetap terjaga."
-            ]
-        ))
-    if sleep_quality == "sedang":
-        recommendations.append(RecommendationResponse(
-            subject=ReportRecommendationSubjectEnum.SLEEP_QUALITY.value,
-            color_label=ReportRecommendationColorLabelEnum.WARNING.value,
-            messages=[
-                "Kualitas tidurmu dalam 3 hari terakhir masih bisa ditingkatkan.",
-                "Cobalah untuk tidak mengkonsumsi kafein dan menggunakan gadget terlalu dekat dengan waktu tidur!"
-            ]
-        ))
+    for condition, subject, color_label, messages in COMBO_RECOMMENDATIONS:
+        if condition(deadline_level, piling_level, sleep_level):
+            recommendations.append(RecommendationResponse(
+                subject=subject.value,
+                color_label=color_label.value,
+                messages=messages,
+            ))
 
-    if deadline_is_tomorrow_tasks == "rendah" and piling_up_tasks == "rendah" and sleep_quality == "baik":
+    if not recommendations:
         recommendations.append(RecommendationResponse(
             subject=ReportRecommendationSubjectEnum.OTHER.value,
             color_label=ReportRecommendationColorLabelEnum.SUCCESS.value,
-            messages=[
-                "Tugas dan kualitas tidurmu sudah terkelola dengan baik.",
-                "Terus pertahankan untuk menjaga kesehatan mental dan fisik!"
-            ]
+            messages=["Semua dalam keadaan baik"],
         ))
 
     return recommendations
