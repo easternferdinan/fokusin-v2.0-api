@@ -221,11 +221,21 @@ def get_potential_stress_factors_service(db: Session, user_id: uuid.UUID) -> Pot
             sleep_quality_counts[sleep_quality] += 1
         else:
             sleep_quality_counts[sleep_quality] = 1
-    
+
+    # Default to best quality (3) if no sleep data available
     if not sleep_quality_list:
         sleep_quality_mode = 3
     else:
-        sleep_quality_mode = max(sleep_quality_counts, key=sleep_quality_counts.get)
+        # Find the highest frequency count among all quality values
+        max_count = max(sleep_quality_counts.values())
+        # Collect all quality values that occur that many times
+        candidates = [k for k, v in sleep_quality_counts.items() if v == max_count]
+        if len(candidates) > 1:
+            # Tie: no dominant pattern — default to middle (2 / "sedang")
+            sleep_quality_mode = 2
+        else:
+            # Clear winner: use the unique mode
+            sleep_quality_mode = candidates[0]
 
     return PotentialStressFactorsResponse(
         deadline_is_tomorrow_tasks=three_level_categorize(deadline_is_tomorrow_tasks, 0, 2),
