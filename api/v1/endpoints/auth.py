@@ -4,12 +4,15 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from api.deps import get_db
+from core.exceptions import DatabaseOperationError
 from enums.log_enums import LogEvent
-from schemas.member import UserCreateRequest, UserResponse, UserAuthenticationRequest, UserAuthenticationSuccessResponse, UserAuthenticationFailedResponse, UserUpdateRequest
+from schemas.member import UserCreateRequest, UserResponse, UserAuthenticationRequest, UserAuthenticationSuccessResponse, UserAuthenticationFailedResponse, UserUpdateRequest, ChangePasswordRequest, ForgotPasswordRequest
 from services.auth_service import (
     register_user_service,
     authenticate_user_service,
-    update_user_service
+    update_user_service,
+    change_password_service,
+    forgot_password_service
 )
 from services.log_service import log_user_action
 
@@ -59,3 +62,36 @@ def update(user_in: UserUpdateRequest, db: Session = Depends(get_db), user: Memb
     
     log_user_action(db, user, LogEvent.UPDATE, f"User updated profile: {user.username}")
     return user
+
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+def change_password(pw_in: ChangePasswordRequest, db: Session = Depends(get_db), user: Member = Depends(get_current_user)):
+    """
+    Change password for the authenticated user. Verifies old password before updating.
+    """
+    try:
+        change_password_service(db, user.user_id, pw_in)
+    except DatabaseOperationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    log_user_action(db, user, LogEvent.UPDATE, f"User changed password: {user.username}")
+    return {"message": "Password berhasil diubah"}
+
+
+@router.post("/forgot-password", status_code=status.HTTP_200_OK)
+def forgot_password(pw_in: ForgotPasswordRequest, db: Session = Depends(get_db)):
+    """
+    Reset a mahasiswa's password to their email.
+    """
+    try:
+        forgot_password_service(db, pw_in)
+    except DatabaseOperationError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    return {"message": "Password berhasil direset ke email yang terdaftar"}

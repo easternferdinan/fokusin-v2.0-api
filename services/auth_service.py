@@ -5,7 +5,7 @@ from pwdlib import PasswordHash
 
 from core.exceptions import DatabaseOperationError
 from models.member import Member
-from schemas.member import UserCreateRequest, UserAuthenticationRequest, UserUpdateRequest, UserAuthenticationSuccessResponse, UserAuthenticationFailedResponse
+from schemas.member import UserCreateRequest, UserAuthenticationRequest, UserUpdateRequest, UserAuthenticationSuccessResponse, UserAuthenticationFailedResponse, ChangePasswordRequest, ForgotPasswordRequest
 from enums.member_enums import MemberRole
 from utils.jwt import create_access_token
 
@@ -59,6 +59,7 @@ def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -
             )
         
         access_token = create_access_token(user)
+        must_change_password = (auth_in.password == user.email)
         return UserAuthenticationSuccessResponse(
             fullname=user.fullname,
             username=user.username,
@@ -68,7 +69,8 @@ def authenticate_user_service(db: Session, auth_in: UserAuthenticationRequest) -
             social_support=user.social_support,
             role=user.role,
             authenticated=True,
-            access_token=access_token
+            access_token=access_token,
+            must_change_password=must_change_password
         )
     except SQLAlchemyError as e:
         raise DatabaseOperationError("Failed to authenticate user") from e
@@ -93,15 +95,69 @@ def update_user_service(db: Session, user_id: UUID4, user_in: UserUpdateRequest)
         
         if not user:
             return None
-            
-        user.fullname = user_in.fullname
-        user.email = user_in.email
-        user.mental_health_history = user_in.mental_health_history
-        user.academic_performance = user_in.academic_performance
-        user.social_support = user_in.social_support
+
+        update_data = user_in.model_dump(exclude_unset=True, exclude={"password"})
+        for field, value in update_data.items():
+            setattr(user, field, value)
+
+        if user_in.password is not None:
+            hasher = PasswordHash.recommended()
+            user.password = hasher.hash(user_in.password)
+
+        db.add(user)
         db.commit()
         db.refresh(user)
         return user
     except SQLAlchemyError as e:
         db.rollback()
         raise DatabaseOperationError("Failed to update user") from e
+
+
+def change_password_service(db: Session, user_id: UUID4, pw_in: ChangePasswordRequest) -> Member:
+    """
+    Change password for an existing member, verifying old password first.
+    """
+    try:
+        user = db.query(Member).filter(Member.user_id == user_id).first()
+
+        if not user:
+            raise DatabaseOperationError("User tidak ditemukan")
+
+        hasher = PasswordHash.recommended()
+        if not hasher.verify(pw_in.old_password, user.password):
+            raise DatabaseOperationError("Password lama salah")
+
+        user.password = hasher.hash(pw_in.new_password)
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise DatabaseOperationError("Gagal mengubah password") from e
+
+
+def forgot_password_service(db: Session, pw_in: ForgotPasswordRequest) -> Member:
+    """
+    Reset a mahasiswa's password to their email.
+    """
+    try:
+        user = db.query(Member).filter(Member.username == pw_in.username).first()
+
+        if not user:
+            raise DatabaseOperationError("Username tidak ditemukan")
+
+        if user.role != MemberRole.MAHASISWA:
+            raise DatabaseOperationError("Fitur ini hanya untuk mahasiswa")
+
+        hasher = PasswordHash.recommended()
+        user.password = hasher.hash(user.email)
+
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except SQLAlchemyError as e:
+        db.rollback()
+        raise DatabaseOperationError("Gagal mereset password") from e

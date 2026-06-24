@@ -34,6 +34,13 @@ class UserAuthenticationRequest(BaseModel):
     username: str
     password: str
 
+class ForgotPasswordRequest(BaseModel):
+    username: str
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str = Field(min_length=8)
+
 class UserAuthenticationSuccessResponse(UserBase):
     """
     Response model for successful user authentication.
@@ -42,6 +49,7 @@ class UserAuthenticationSuccessResponse(UserBase):
     role: MemberRole
     authenticated: bool = True
     access_token: str
+    must_change_password: bool = False
 
     class Config:
         from_attributes = True
